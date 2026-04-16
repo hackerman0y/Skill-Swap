@@ -1,0 +1,1 @@
+GET http://localhost:8080/api/hala/skills/recommend?category=Programming&excludeId=1

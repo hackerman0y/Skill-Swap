@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Explore Skills</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #0d0d0d;
+            color: white;
+            margin: 0;
+        }
+
+        .container {
+            width: 85%;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .skills {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        .view { background: blue; color: white; }
+        .edit { background: orange; color: white; }
+        .delete { background: red; color: white; }
+        .online { color: lightgreen; }
+        .offline { color: red; }
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Explore Skills</h1>
+
+    <div class="top-bar">
+        <div class="controls">
+            <input type="text" id="search" placeholder="Search...">
+
+            <select id="categoryFilter" onchange="applyAll()">
+                <option value="">All Categories</option>
+            </select>
+
+            <select id="typeFilter" onchange="applyAll()">
+                <option value="">All Types</option>
+                <option value="learn">Learn</option>
+                <option value="teach">Teach</option>
+            </select>
+
+            <select id="sort">
+                <option value="asc">A-Z</option>
+                <option value="desc">Z-A</option>
+                <option value="popular">Most Popular</option>
+            </select>
+        </div>
+
+        <button onclick="toggleDark()">Dark Mode</button>
+    </div>
+
+    <div class="skills" id="skillsContainer"></div>
+
+    <div class="recommended">
+        <h2>Recommended</h2>
+        <div id="recommendedContainer"></div>
+    </div>
+
+</div>
+
+<script>
+
+    let skills = [];
+
+    function fetchSkills() {
+        fetch("http://localhost:8080/api/hala/skills")
+            .then(res => res.json())
+            .then(data => {
+                skills = data;
+                renderSkills(data);
+                loadRecommended();
+            });
+    }
+
+    function renderSkills(data) {
+        let container = document.getElementById("skillsContainer");
+        container.innerHTML = "";
+
+        if (data.length === 0) {
+            container.innerHTML = "<p>No skills found</p>";
+            return;
+        }
+
+        data.forEach(skill => {
+
+            let isOnline = false;
+            if (skill.lastSeen) {
+                let diff = new Date() - new Date(skill.lastSeen);
+                isOnline = diff < 300000;
+            }
+
+            container.innerHTML += `
+        <div class="card">
+            <h3>${skill.name}</h3>
+            <p>${skill.description}</p>
+            <p>Category: ${skill.category}</p>
+            <p>Type: ${skill.type}</p>
+            <p>Views: ${skill.views}</p>
+            <p class="${isOnline ? 'online' : 'offline'}">
+                ${isOnline ? 'Online' : 'Offline'}
+            </p>
+
+            <button class="view" onclick="goToDetails(${skill.id})">View</button>
+            <button class="edit" onclick="editSkill(${skill.id})">Edit</button>
+            <button class="delete" onclick="deleteSkill(${skill.id})">Delete</button>
+        </div>
+        `;
+        });
+    }
+
+    // redirect
+    function goToDetails(id) {
+        window.location.href = "skill.html?id=" + id;
+    }
+
+    function editSkill(id) {
+        let skill = skills.find(s => s.id === id);
+
+        let newName = prompt("Edit Name:", skill.name);
+        let newDesc = prompt("Edit Description:", skill.description);
+
+        if (!newName || !newDesc) return;
+
+        fetch(`http://localhost:8080/api/hala/skills/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                ...skill,
+                name: newName,
+                description: newDesc
+            })
+        }).then(() => fetchSkills());
+    }
+
+    function deleteSkill(id) {
+        fetch(`http://localhost:8080/api/hala/skills/${id}`, {
+            method: "DELETE"
+        }).then(() => fetchSkills());
+    }
+
+    // filters
+    function applyAll() {
+        let category = document.getElementById("categoryFilter").value;
+        let type = document.getElementById("typeFilter").value;
+
+        let filtered = skills.filter(s =>
+            (category === "" || s.category === category) &&
+            (type === "" || s.type === type)
+        );
+
+        renderSkills(filtered);
+    }
+
+    // live search
+    document.getElementById("search").addEventListener("input", function () {
+        let value = this.value;
+
+        if (value === "") {
+            fetchSkills();
+            return;
+        }
+
+        fetch(`http://localhost:8080/api/hala/skills/search?name=${value}`)
+            .then(res => res.json())
+            .then(data => renderSkills(data));
+    });
+
+    // sort
+    document.getElementById("sort").addEventListener("change", function () {
+        let value = this.value;
+
+        if (value === "popular") {
+            fetch("http://localhost:8080/api/hala/skills/popular")
+                .then(res => res.json())
+                .then(data => renderSkills(data));
+        } else {
+            fetch(`http://localhost:8080/api/hala/skills/sort?direction=${value}`)
+                .then(res => res.json())
+                .then(data => renderSkills(data));
+        }
+    });
+
+    // categories
+    function loadCategories() {
+        fetch("http://localhost:8080/api/hala/skills/categories")
+            .then(res => res.json())
+            .then(data => {
+                let select = document.getElementById("categoryFilter");
+
+                data.forEach(cat => {
+                    select.innerHTML += `<option value="${cat}">${cat}</option>`;
+                });
+            });
+    }
+
+    // smart recommendation
+    function loadRecommended() {
+        fetch("http://localhost:8080/api/hala/skills/recommend-user")
+            .then(res => res.json())
+            .then(data => {
+                let container = document.getElementById("recommendedContainer");
+                container.innerHTML = "";
+
+                data.forEach(skill => {
+                    container.innerHTML += `
+                <div class="card">
+                    <h4>${skill.name}</h4>
+                    <p>${skill.category}</p>
+                </div>
+                `;
+                });
+            });
+    }
+
+    function toggleDark() {
+        document.body.classList.toggle("dark-mode");
+    }
+
+    fetchSkills();
+    loadCategories();
+
+</script>
+
+</body>
+</html>

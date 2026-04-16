@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Skill Details</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #0d0d0d;
+            color: white;
+            text-align: center;
+        }
+
+        .card {
+            margin: 50px auto;
+            width: 300px;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 15px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<h1>Skill Details</h1>
+
+<div class="card" id="skillDetails"></div>
+
+<button onclick="goBack()">Back</button>
+
+<script>
+
+    function getId() {
+        let params = new URLSearchParams(window.location.search);
+        return params.get("id");
+    }
+
+    function loadSkill() {
+        let id = getId();
+
+        fetch(`http://localhost:8080/api/hala/skills/${id}`)
+            .then(res => res.json())
+            .then(skill => {
+                document.getElementById("skillDetails").innerHTML = `
+                <h2>${skill.name}</h2>
+                <p>${skill.description}</p>
+                <p>Category: ${skill.category}</p>
+                <p>Type: ${skill.type}</p>
+                <p>Views: ${skill.views}</p>
+            `;
+            });
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    loadSkill();
+
+</script>
+
+</body>
+</html>
