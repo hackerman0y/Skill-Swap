@@ -25,5 +25,9 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    private int trustScore = 0;
+    @Builder.Default
+    @Column(name = "trust_score", nullable = false)
+    private Integer trustScore = 0;
+
+
 }

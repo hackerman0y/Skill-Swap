@@ -19,10 +19,11 @@ private final PasswordEncoder passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
 
-    public User register(User u){
+    public User register(User u) {
         u.setPassword(passwordEncoder.encode(u.getPassword()));
-    return userRepository.save(u);
-}
+        u.setTrustScore(0);
+        return userRepository.save(u);
+    }
 
 public User getUser(Long id){
     return userRepository.findById(id).orElseThrow();
