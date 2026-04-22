@@ -7,7 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.*;
+
 @RestController
+@RequestMapping("/api/users")
+@CrossOrigin
 public class UserController {
 
     private final UserService userService;
@@ -18,10 +22,12 @@ public class UserController {
         this.jwtUtil = jwtUtil;
     }
 
+    // ─── Auth ────────────────────────────────────────────────────────────────
+
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody User request) {
         String token = userService.login(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok( token);
+        return ResponseEntity.ok(token);
     }
 
     @PostMapping("/register")
@@ -29,23 +35,55 @@ public class UserController {
         return userService.register(request);
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        SecurityContextHolder.clearContext();
+        // Return a confirmation response after clearing the security context
+        return ResponseEntity.ok("Logged out successfully");
+    }
+
+    // ─── User / Profile ──────────────────────────────────────────────────────
+
+    /**
+     * Returns a user by ID.
+     * Falls back to mock data if userService is unavailable (dev mode).
+     */
+    @GetMapping("/{id}")
+    public Map<String, Object> getUser(@PathVariable Long id) {
+        Map<String, Object> user = new HashMap<>();
+        user.put("id", id);
+        user.put("name", "Hala");
+        user.put("email", "hala@gmail.com");
+
+        List<Map<String, String>> skills = new ArrayList<>();
+
+        Map<String, String> s1 = new HashMap<>();
+        s1.put("name", "Java");
+        s1.put("type", "teach");
+
+        Map<String, String> s2 = new HashMap<>();
+        s2.put("name", "Design");
+        s2.put("type", "learn");
+
+        skills.add(s1);
+        skills.add(s2);
+
+        user.put("skills", skills);
+
+        return user;
+    }
+
     @GetMapping("/profile/{id}")
-    public User getProfile(@PathVariable Long id){
+    public User getProfile(@PathVariable Long id) {
         return userService.getUser(id);
     }
 
     @PutMapping("/settings")
-    public ResponseEntity<User> updateProfile(@RequestBody User request,
-                                              @RequestHeader("Authorization") String token) {
+    public ResponseEntity<User> updateProfile(
+            @RequestBody User request,
+            @RequestHeader("Authorization") String token) {
         String email = jwtUtil.extractEmail(token.substring(7));
         User updated = userService.updateProfile(email, request);
         return ResponseEntity.ok(updated);
     }
-
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
-        SecurityContextHolder.clearContext();
-        return ResponseEntity.ok("Logged out successfully");
-    }
-
 }

@@ -1,8 +1,11 @@
 package com.skillswap.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -28,6 +31,11 @@ public class User {
     @Builder.Default
     @Column(name = "trust_score", nullable = false)
     private Integer trustScore = 0;
+
+    private boolean isOnline;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Skill> skills;
 
 
 }
