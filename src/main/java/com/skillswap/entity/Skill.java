@@ -18,7 +18,7 @@ public class Skill {
 
     private String type; // teach or learn
     private String description;
-    private int popularity;
+    private Integer popularity;
     @ManyToOne
     @JsonIgnore
     @JoinColumn(name = "user_id")
