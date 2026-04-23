@@ -86,6 +86,13 @@ public class UserController {
         return userService.getUser(id);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<User> getMe(@RequestHeader("Authorization") String token) {
+        String email = jwtUtil.extractEmail(token.substring(7));
+        User user = userService.getUserByEmail(email);
+        return ResponseEntity.ok(user);
+    }
+
     @PutMapping("/settings")
     public ResponseEntity<User> updateProfile(
             @RequestBody User request,

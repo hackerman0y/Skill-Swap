@@ -2,6 +2,7 @@ package com.skillswap.controller;
 
 import com.skillswap.entity.Skill;
 import com.skillswap.entity.User;
+import com.skillswap.config.JwtUtil;
 import com.skillswap.repository.SkillRepository;
 import com.skillswap.repository.UserRepository;
 import com.skillswap.service.SkillService;
@@ -17,13 +18,13 @@ public class SkillController {
     private final SkillService skillService;
     private final UserRepository userRepo;
     private final SkillRepository skillRepo;
+    private final JwtUtil jwtUtil;
 
-    public SkillController(SkillService skillService,
-                           UserRepository userRepo,
-                           SkillRepository skillRepo) {
+    public SkillController(SkillService skillService, UserRepository userRepo, SkillRepository skillRepo, JwtUtil jwtUtil) {
         this.skillService = skillService;
         this.userRepo = userRepo;
         this.skillRepo = skillRepo;
+        this.jwtUtil = jwtUtil;
     }
 
     //  GET ALL
@@ -40,10 +41,11 @@ public class SkillController {
 
     // ADD SKIll
     @PostMapping
-    public Skill addSkill(@RequestBody Skill skill) {
+    public Skill addSkill(@RequestBody Skill skill,
+                          @RequestHeader("Authorization") String token) {
 
-        // مؤقت لحد JWT
-        User user = userRepo.findById(1L).orElseThrow();
+        String email = jwtUtil.extractEmail(token.substring(7));
+        User user = userRepo.findByEmail(email).orElseThrow();
 
         skill.setUser(user);
         skill.setPopularity(0);
@@ -69,5 +71,11 @@ public class SkillController {
         Skill skill = skillRepo.findById(id).orElseThrow();
         skill.setPopularity(skill.getPopularity() + 1);
         return skillRepo.save(skill);
+    }
+
+    // GET SKILLS BY USER
+    @GetMapping("/user/{userId}")
+    public List<Skill> getSkillsByUser(@PathVariable Long userId) {
+        return skillService.getSkillsByUser(userId);
     }
 }

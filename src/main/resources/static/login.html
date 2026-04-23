@@ -12,9 +12,7 @@
             gap: 12px;
             width: 100%;
         }
-        .form-group input {
-            width: 100%;
-        }
+        .form-group input { width: 100%; }
         .error-msg {
             color: var(--danger);
             font-size: 13px;
@@ -81,6 +79,7 @@
 
 <script>
     const API = 'http://localhost:8080/api/users';
+    const BASE = 'http://localhost:8080';
 
     function switchTab(tab) {
         document.querySelectorAll('.tab').forEach((t, i) => {
@@ -99,6 +98,17 @@
 
     function hideMsg(id) {
         document.getElementById(id).style.display = 'none';
+    }
+
+    async function setOnline(token) {
+        try {
+            await fetch(BASE + '/presence/online', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+        } catch (e) {
+            console.error('Could not set online status', e);
+        }
     }
 
     async function doLogin() {
@@ -123,6 +133,10 @@
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('userId', data.userId);
                 localStorage.setItem('username', data.username);
+
+                // ✅ Set user online after login
+                await setOnline(data.token);
+
                 showMsg('login-success', '✅ Login successful! Redirecting...', 'success');
                 setTimeout(() => window.location.href = 'index.html', 1500);
             } else {
@@ -154,7 +168,7 @@
             });
 
             if (res.ok) {
-                showMsg('register-success', '✅ Account created! Switching to login...', 'success');
+                showMsg('register-success', '✅ Account created! Please login.', 'success');
                 setTimeout(() => {
                     switchTab('login');
                     document.getElementById('l-email').value = email;

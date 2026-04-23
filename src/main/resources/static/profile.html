@@ -8,10 +8,10 @@
 <body>
 
 <div class="navbar">
-    <h2 onclick="location.href='index.html'">My Profile</h2>
+    <h2 onclick="navigate('index.html')">My Profile</h2>
     <div class="nav-right">
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
-        <button class="btn-back" onclick="location.href='index.html'">← Back</button>
+        <button class="btn-back" onclick="navigate('index.html')">← Back</button>
     </div>
 </div>
 
@@ -26,10 +26,17 @@
 </div>
 
 <script>
-    const API = "http://localhost:8080"; // backend base URL
+    const API = "http://localhost:8080";
 
     const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
     if (!token) location.href = "login.html";
+
+    // ✅ Navigate without triggering offline
+    function navigate(url) {
+        sessionStorage.setItem('navigating', 'true');
+        location.href = url;
+    }
 
     // dark mode
     const modeBtn = document.getElementById("modeBtn");
@@ -44,7 +51,6 @@
         modeBtn.innerText = dark ? "☀️" : "🌙";
     }
 
-    // sanitize text
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m =>
@@ -52,7 +58,6 @@
         );
     }
 
-    // auth headers
     function authHeaders() {
         return {
             "Content-Type": "application/json",
@@ -60,15 +65,29 @@
         };
     }
 
-    // load user + skills
+    // ✅ Only set offline if actually closing browser, not navigating
+    window.addEventListener('beforeunload', () => {
+        const navigating = sessionStorage.getItem('navigating');
+        if (userId && !navigating) {
+            navigator.sendBeacon(`${API}/presence/offline/${userId}`);
+        }
+        sessionStorage.removeItem('navigating');
+    });
+
     async function loadProfile() {
         try {
+            // ✅ Set online when profile loads
+            await fetch(`${API}/presence/online`, {
+                method: 'POST',
+                headers: authHeaders()
+            });
+
             const userRes = await fetch(`${API}/api/users/me`, {
                 headers: authHeaders()
             });
 
             if (!userRes.ok) {
-                location.href = "login.html";
+                navigate('login.html');
                 return;
             }
 
@@ -112,8 +131,11 @@
         }
     }
 
-    // logout
     async function logout() {
+        // ✅ Set offline on logout explicitly
+        if (userId) {
+            navigator.sendBeacon(`${API}/presence/offline/${userId}`);
+        }
         try {
             await fetch(`${API}/api/users/logout`, {
                 method: "POST",

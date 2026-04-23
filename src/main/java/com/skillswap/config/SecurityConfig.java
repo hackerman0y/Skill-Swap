@@ -54,10 +54,11 @@ public class SecurityConfig {
                                 "/api/users/login",
                                 "/api/users/register",
                                 "/api/users/logout",
+                                "/api/users/me",
                                 "/api/skills/**",
                                 "/ws/**",
-                                "/explore",
                                 "/presence/**",
+                                "/explore",
                                 "/api/swaps/**",
                                 "/api/sessions/**"
                         ).permitAll()
