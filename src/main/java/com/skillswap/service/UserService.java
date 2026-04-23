@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
 
-private final UserRepository userRepository ;
-private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository ;
+    private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, JwtUtil jwtUtil ) {
@@ -18,15 +18,21 @@ private final PasswordEncoder passwordEncoder;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
     }
+    public User register(User user) {
+        try {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+                if (user.getTrustScore() == null) user.setTrustScore(0);
+                if (user.getOnline() == null) user.setOnline(false);
+                return userRepository.save(user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
 
-    public User register(User u){
-        u.setPassword(passwordEncoder.encode(u.getPassword()));
-    return userRepository.save(u);
-}
-
-public User getUser(Long id){
-    return userRepository.findById(id).orElseThrow();
-}
+    public User getUser(Long id){
+        return userRepository.findById(id).orElseThrow();
+    }
 
     public String login(String email, String password) {
         User user = userRepository.findByEmail(email)
@@ -35,6 +41,10 @@ public User getUser(Long id){
             throw new RuntimeException("Wrong Password");
         }
         return jwtUtil.generateToken(email);
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow();
     }
 
     public User updateProfile(String email, User request) {

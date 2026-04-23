@@ -1,5 +1,6 @@
 package com.skillswap.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,4 +15,12 @@ public class Skill {
 
     private String name;
     private String category;
+
+    private String type; // teach or learn
+    private String description;
+    private Integer popularity;
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name = "user_id")
+    private User user;
 }

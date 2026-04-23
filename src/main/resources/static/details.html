@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Skill Details</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h2 onclick="location.href='index.html'">SkillSwap</h2>
+    <div class="nav-right">
+        <span class="profile" onclick="goProfile()">👤</span>
+        <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
+        <button class="btn-back" onclick="goBack()">← Back</button>
+    </div>
+</div>
+
+<div class="details-container">
+    <div class="details-card" id="details">Loading...</div>
+</div>
+
+<footer>
+    © 2026 SkillSwap — Learn & Teach Skills Easily 🚀
+</footer>
+
+<script>
+    const API = "http://localhost:8080"; // backend base URL
+
+    // dark mode
+    const modeBtn = document.getElementById("modeBtn");
+    if (localStorage.getItem("mode") === "dark") {
+        document.body.classList.add("dark");
+        modeBtn.innerText = "☀️";
+    }
+    function toggleMode() {
+        document.body.classList.toggle("dark");
+        const dark = document.body.classList.contains("dark");
+        localStorage.setItem("mode", dark ? "dark" : "light");
+        modeBtn.innerText = dark ? "☀️" : "🌙";
+    }
+
+    // get id from URL
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    // sanitize text
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m =>
+            m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'
+        );
+    }
+
+    const container = document.getElementById("details");
+
+    // fetch skill by id
+    if (!id) {
+        container.innerHTML = "<h3>Invalid skill</h3>";
+    } else {
+        fetch(`${API}/api/skills/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(skill => {
+                const user = skill.user || {};
+
+                container.innerHTML = `
+                <h2>${escapeHtml(skill.name)}</h2>
+
+                <p><b>Category:</b> ${escapeHtml(skill.category)}</p>
+
+                <div class="type-badge ${skill.type === 'teach' ? 'type-teach' : 'type-learn'}"
+                     style="display:inline-block; margin:10px 0;">
+                    ${skill.type === 'teach' ? 'TEACH' : 'LEARN'}
+                </div>
+
+                <p>${escapeHtml(skill.description || "")}</p>
+
+                <p>🔥 Popularity: ${skill.popularity || 0}</p>
+
+                <div class="user-info-detail">
+                    <div class="detail-avatar">
+                        ${(user.username?.charAt(0) || "U").toUpperCase()}
+                    </div>
+                    <div>
+                        <div><b>${escapeHtml(user.username || "Unknown")}</b></div>
+                        <div class="online-status">
+                            ${user.online ? '🟢 Online' : '⚫ Offline'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            })
+            .catch(() => {
+                container.innerHTML = "<h3>Skill not found</h3>";
+            });
+    }
+
+    // navigation
+    function goBack() { window.location.href = "index.html"; }
+    function goProfile() { window.location.href = "profile.html"; }
+</script>
+
+</body>
+</html>
