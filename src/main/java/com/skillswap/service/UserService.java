@@ -18,11 +18,15 @@ private final PasswordEncoder passwordEncoder;
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
     }
-
-    public User register(User u) {
-        u.setPassword(passwordEncoder.encode(u.getPassword()));
-        u.setTrustScore(0);
-        return userRepository.save(u);
+    public User register(User user) {
+        try {
+            user.setTrustScore(0);
+            user.setOnline(false);
+            return userRepository.save(user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
 public User getUser(Long id){

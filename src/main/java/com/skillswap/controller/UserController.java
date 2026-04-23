@@ -31,8 +31,13 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody User request) {
-        return userService.register(request);
+    public ResponseEntity<?> register(@RequestBody User user) {
+        try {
+            return ResponseEntity.ok(userService.register(user));
+        } catch (Exception e) {
+            e.printStackTrace(); // 👈 THIS LINE
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/logout")
