@@ -25,9 +25,15 @@ public class UserController {
     // ─── Auth ────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User request) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody User request) {
         String token = userService.login(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(token);
+        User user = userService.getUserByEmail(request.getEmail());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("userId", user.getId());
+        response.put("username", user.getUsername());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
@@ -35,7 +41,7 @@ public class UserController {
         try {
             return ResponseEntity.ok(userService.register(user));
         } catch (Exception e) {
-            e.printStackTrace(); // 👈 THIS LINE
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -49,10 +55,7 @@ public class UserController {
 
     // ─── User / Profile ──────────────────────────────────────────────────────
 
-    /**
-     * Returns a user by ID.
-     * Falls back to mock data if userService is unavailable (dev mode).
-     */
+
     @GetMapping("/{id}")
     public Map<String, Object> getUser(@PathVariable Long id) {
         Map<String, Object> user = new HashMap<>();
@@ -81,6 +84,13 @@ public class UserController {
     @GetMapping("/profile/{id}")
     public User getProfile(@PathVariable Long id) {
         return userService.getUser(id);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getMe(@RequestHeader("Authorization") String token) {
+        String email = jwtUtil.extractEmail(token.substring(7));
+        User user = userService.getUserByEmail(email);
+        return ResponseEntity.ok(user);
     }
 
     @PutMapping("/settings")

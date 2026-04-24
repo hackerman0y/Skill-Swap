@@ -20,7 +20,6 @@ public class Skill {
     private String description;
     private Integer popularity;
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "user_id")
     private User user;
 }

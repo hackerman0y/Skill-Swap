@@ -28,11 +28,13 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
-    @Builder.Default
-    @Column(name = "trust_score", nullable = false)
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean online = false;
+
+    @Column(columnDefinition = "integer default 0")
     private Integer trustScore = 0;
 
-    private boolean isOnline;
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Skill> skills;

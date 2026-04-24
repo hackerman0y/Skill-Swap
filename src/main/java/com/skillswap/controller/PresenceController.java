@@ -1,7 +1,10 @@
 package com.skillswap.controller;
 
-import com.skillswap.presence.PresenceService;
+import com.skillswap.entity.User;
+import com.skillswap.repository.UserRepository;
+import com.skillswap.service.PresenceService;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,9 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PresenceController {
 
     private final PresenceService presenceService;
+    private final UserRepository userRepository;
 
-    public PresenceController(PresenceService presenceService) {
+    public PresenceController(PresenceService presenceService, UserRepository userRepository) {
         this.presenceService = presenceService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/online")
@@ -44,5 +49,12 @@ public class PresenceController {
                 .getPrincipal();
 
         presenceService.setOffline(email);
+    }
+
+    @PostMapping("/offline/{userId}")
+    public void setOfflineById(@PathVariable Long userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setOnline(false);
+        userRepository.save(user);
     }
 }

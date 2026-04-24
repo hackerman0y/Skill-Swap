@@ -8,7 +8,7 @@
 <body>
 
 <div class="navbar">
-    <h2 onclick="location.href='index.html'">SkillSwap</h2>
+    <h2 onclick="navigate('index.html')">SkillSwap</h2>
     <div class="nav-right">
         <span onclick="toggleFilters()" style="cursor:pointer;">⚙️</span>
         <div id="filtersBox" class="filters-box">
@@ -28,7 +28,7 @@
             </select>
         </div>
         <span id="navUser"></span>
-        <span onclick="goProfile()" style="cursor:pointer;">👤</span>
+        <span onclick="navigate('profile.html')" style="cursor:pointer;">👤</span>
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
     </div>
 </div>
@@ -67,7 +67,13 @@
 </div>
 
 <script>
-    const API = "";
+    const API = "http://localhost:8080";
+
+    // ✅ Navigate without triggering offline
+    function navigate(url) {
+        sessionStorage.setItem('navigating', 'true');
+        location.href = url;
+    }
 
     const modeBtn = document.getElementById("modeBtn");
     if (localStorage.getItem("mode") === "dark") {
@@ -128,6 +134,16 @@
         return false;
     }
 
+    // ✅ Only set offline if actually closing browser, not navigating
+    window.addEventListener('beforeunload', () => {
+        const userId = localStorage.getItem('userId');
+        const navigating = sessionStorage.getItem('navigating');
+        if (userId && !navigating) {
+            navigator.sendBeacon(`${API}/presence/offline/${userId}`);
+        }
+        sessionStorage.removeItem('navigating');
+    });
+
     async function loadSkills() {
         try {
             const res = await fetch(`${API}/api/skills`);
@@ -165,7 +181,7 @@
             const username = user.username || "Unknown";
             const isOwner = currentUser && (skill.user?.id === currentUser.id);
             return `
-            <div class="skill-card" onclick="location.href='details.html?id=${skill.id}'">
+            <div class="skill-card" onclick="navigate('details.html?id=${skill.id}')">
                 <div class="like-btn" onclick="event.stopPropagation();increasePopularity(${skill.id})">❤️</div>
                 <div class="skill-name">${escapeHtml(skill.name)}</div>
                 <div class="skill-category">#${escapeHtml(skill.category || "General")}</div>
@@ -318,7 +334,7 @@
         filtersBox.style.display = filtersBox.style.display === "flex" ? "none" : "flex";
     }
 
-    function goProfile() { location.href = "profile.html"; }
+    function goProfile() { navigate('profile.html'); }
 
     cat.onchange = () => {
         otherCategory.style.display = cat.value === "Other" ? "block" : "none";
@@ -328,7 +344,7 @@
         const username = localStorage.getItem("username");
         if (!username) {
             document.getElementById("navUser").innerHTML =
-                `<button class="btn" onclick="location.href='login.html'">🔐 Login</button>`;
+                `<button class="btn" onclick="navigate('login.html')">🔐 Login</button>`;
         } else {
             document.getElementById("navUser").innerHTML =
                 `<span style="color:var(--primary); font-weight:bold; cursor:pointer;"
@@ -337,6 +353,10 @@
     }
 
     async function logout() {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            navigator.sendBeacon(`${API}/presence/offline/${userId}`);
+        }
         try {
             await fetch(`${API}/api/users/logout`, { method: "POST", headers: authHeaders() });
         } catch (_) {}
