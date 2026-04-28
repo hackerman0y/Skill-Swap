@@ -55,10 +55,17 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/logout",
                                 "/api/users/me",
+                                "/api/users",
+                                "/api/users/**",
                                 "/api/skills/**",
+                                "/api/messages/**",
+                                "/api/notifications/**",
                                 "/ws/**",
                                 "/presence/**",
                                 "/explore",
+                                "/chat",
+                                "/chat/**",
+                                "/notifications",
                                 "/api/swaps/**",
                                 "/api/sessions/**"
                         ).permitAll()
