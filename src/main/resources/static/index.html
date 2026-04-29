@@ -71,7 +71,6 @@
 <script>
     const API = "http://localhost:8080";
 
-    // ✅ Navigate without triggering offline
     function navigate(url) {
         sessionStorage.setItem('navigating', 'true');
         location.href = url;
@@ -89,41 +88,37 @@
         modeBtn.innerText = dark ? "☀️" : "🌙";
     }
 
-    const modal = document.getElementById("modal");
-    const search = document.getElementById("searchInput");
-    const catFilter = document.getElementById("catFilter");
-    const sortFilter = document.getElementById("sortFilter");
-    const filtersBox = document.getElementById("filtersBox");
-    const nameInput = document.getElementById("name");
-    const cat = document.getElementById("cat");
-    const desc = document.getElementById("desc");
-    const type = document.getElementById("type");
+    const modal         = document.getElementById("modal");
+    const search        = document.getElementById("searchInput");
+    const catFilter     = document.getElementById("catFilter");
+    const sortFilter    = document.getElementById("sortFilter");
+    const filtersBox    = document.getElementById("filtersBox");
+    const nameInput     = document.getElementById("name");
+    const cat           = document.getElementById("cat");
+    const desc          = document.getElementById("desc");
+    const type          = document.getElementById("type");
     const otherCategory = document.getElementById("otherCategory");
 
-    let allSkills = [];
-    let editingId = null;
+    let allSkills  = [];
+    let editingId  = null;
 
-    function getToken() { return localStorage.getItem("token"); }
-
+    function getToken()      { return localStorage.getItem("token"); }
     function getCurrentUser() {
-        const userId = localStorage.getItem("userId");
+        const userId   = localStorage.getItem("userId");
         const username = localStorage.getItem("username");
         if (!userId) return null;
         return { id: parseInt(userId), username };
     }
-
     function authHeaders() {
         return {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${getToken()}`
         };
     }
-
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
-
     function handleUnauthorized(res) {
         if (res.status === 401 || res.status === 403) {
             alert("Session expired. Please login again.");
@@ -136,9 +131,8 @@
         return false;
     }
 
-    // ✅ Only set offline if actually closing browser, not navigating
     window.addEventListener('beforeunload', () => {
-        const userId = localStorage.getItem('userId');
+        const userId     = localStorage.getItem('userId');
         const navigating = sessionStorage.getItem('navigating');
         if (userId && !navigating) {
             navigator.sendBeacon(`${API}/presence/offline/${userId}`);
@@ -163,7 +157,8 @@
         const q = search.value.toLowerCase();
         if (q) filtered = filtered.filter(x => x.name.toLowerCase().includes(q));
         if (catFilter.value) {
-            filtered = filtered.filter(x => x.category?.toLowerCase() === catFilter.value.toLowerCase());
+            filtered = filtered.filter(x =>
+                x.category?.toLowerCase() === catFilter.value.toLowerCase());
         }
         if (sortFilter.value === "az") filtered.sort((a, b) => a.name.localeCompare(b.name));
         if (sortFilter.value === "za") filtered.sort((a, b) => b.name.localeCompare(a.name));
@@ -179,15 +174,16 @@
         }
         const currentUser = getCurrentUser();
         container.innerHTML = skills.map(skill => {
-            const user = skill.user || {};
+            const user     = skill.user || {};
             const username = user.username || "Unknown";
-            const isOwner = currentUser && (skill.user?.id === currentUser.id);
+            const isOwner  = currentUser && (skill.user?.id === currentUser.id);
             return `
             <div class="skill-card" onclick="navigate('details.html?id=${skill.id}')">
-                <div class="like-btn" onclick="event.stopPropagation();increasePopularity(${skill.id})">❤️</div>
                 <div class="skill-name">${escapeHtml(skill.name)}</div>
                 <div class="skill-category">#${escapeHtml(skill.category || "General")}</div>
-                ${skill.description ? `<div class="skill-description">${escapeHtml(skill.description)}</div>` : ''}
+                ${skill.description
+                ? `<div class="skill-description">${escapeHtml(skill.description)}</div>`
+                : ''}
                 <div class="user-row">
                     <div class="user-info">
                         <div class="user-avatar">${(username.charAt(0) || "U").toUpperCase()}</div>
@@ -206,10 +202,14 @@
                 <div class="card-footer">
                     <div class="popularity">🔥 ${skill.popularity || 0}</div>
                     <div class="action-group">
-                        <button class="action-btn" onclick="event.stopPropagation();increasePopularity(${skill.id})">❤️</button>
+                        <!-- FIX 8: Single like button only, no duplicate at top-right -->
+                        <button class="action-btn"
+                            onclick="event.stopPropagation(); increasePopularity(${skill.id})">❤️</button>
                         ${isOwner ? `
-                        <button class="action-btn" onclick="event.stopPropagation();editSkill(${skill.id})">✏️</button>
-                        <button class="action-btn" onclick="event.stopPropagation();deleteSkill(${skill.id})">🗑️</button>
+                        <button class="action-btn"
+                            onclick="event.stopPropagation(); editSkill(${skill.id})">✏️</button>
+                        <button class="action-btn"
+                            onclick="event.stopPropagation(); deleteSkill(${skill.id})">🗑️</button>
                         ` : ''}
                     </div>
                 </div>
@@ -221,18 +221,20 @@
         const currentUser = getCurrentUser();
         if (!currentUser) { location.href = "login.html"; return; }
 
-        const categoryValue = cat.value === "Other" ? otherCategory.value.trim() : cat.value;
+        const categoryValue = cat.value === "Other"
+            ? otherCategory.value.trim()
+            : cat.value;
         if (!nameInput.value.trim()) { alert("Enter skill name"); return; }
 
         const skill = {
-            name: nameInput.value.trim(),
-            category: categoryValue,
+            name:        nameInput.value.trim(),
+            category:    categoryValue,
             description: desc.value.trim(),
-            type: type.value
+            type:        type.value
         };
 
         const btn = document.getElementById("addBtn");
-        btn.disabled = true;
+        btn.disabled  = true;
         btn.innerText = "Saving...";
 
         try {
@@ -253,7 +255,7 @@
         } catch (e) {
             alert("Connection error. Is the server running?");
         } finally {
-            btn.disabled = false;
+            btn.disabled  = false;
             btn.innerText = "Save";
         }
     }
@@ -261,7 +263,6 @@
     async function deleteSkill(id) {
         if (!getCurrentUser()) { location.href = "login.html"; return; }
         if (!confirm("Delete this skill?")) return;
-
         try {
             const res = await fetch(`${API}/api/skills/${id}`, {
                 method: "DELETE",
@@ -323,20 +324,19 @@
 
     function resetForm() {
         modal.style.display = "none";
-        editingId = null;
-        nameInput.value = "";
-        cat.value = "";
-        desc.value = "";
-        type.value = "teach";
+        editingId           = null;
+        nameInput.value     = "";
+        cat.value           = "";
+        desc.value          = "";
+        type.value          = "teach";
         otherCategory.value = "";
         otherCategory.style.display = "none";
     }
 
     function toggleFilters() {
-        filtersBox.style.display = filtersBox.style.display === "flex" ? "none" : "flex";
+        filtersBox.style.display =
+            filtersBox.style.display === "flex" ? "none" : "flex";
     }
-
-    function goProfile() { navigate('profile.html'); }
 
     cat.onchange = () => {
         otherCategory.style.display = cat.value === "Other" ? "block" : "none";
@@ -356,9 +356,7 @@
 
     async function logout() {
         const userId = localStorage.getItem('userId');
-        if (userId) {
-            navigator.sendBeacon(`${API}/presence/offline/${userId}`);
-        }
+        if (userId) navigator.sendBeacon(`${API}/presence/offline/${userId}`);
         try {
             await fetch(`${API}/api/users/logout`, { method: "POST", headers: authHeaders() });
         } catch (_) {}
