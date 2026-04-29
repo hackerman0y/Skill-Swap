@@ -5,6 +5,8 @@ import com.skillswap.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserService {
 
@@ -53,5 +55,10 @@ public class UserService {
         if (request.getUsername() != null) user.setUsername(request.getUsername());
         if (request.getEmail() != null) user.setEmail(request.getEmail());
         return userRepository.save(user);
+    }
+
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 }

@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <title>SkillSwap - Chat</title>
     <link rel="stylesheet" href="style.css">
-    <!-- SockJS + STOMP for WebSocket -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
-
         body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-        /* ── HEADER ── */
         .chat-header {
             display: flex;
             align-items: center;
@@ -22,7 +19,6 @@
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
-
         .chat-header .back-btn {
             background: transparent;
             border: none;
@@ -31,117 +27,79 @@
             color: var(--primary);
             padding: 4px 8px;
         }
-
         .recipient-avatar {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border-radius: 50%;
             background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-            position: relative;
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 1rem;
+            position: relative; flex-shrink: 0;
         }
-
         .recipient-online-dot {
-            position: absolute;
-            bottom: 1px;
-            right: 1px;
-            width: 10px;
-            height: 10px;
+            position: absolute; bottom: 1px; right: 1px;
+            width: 10px; height: 10px;
             border-radius: 50%;
             background: #64748b;
             border: 2px solid var(--card);
         }
         .recipient-online-dot.is-online { background: #10b981; }
-
         .recipient-info { flex: 1; }
         .recipient-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
         .recipient-status { font-size: 0.75rem; color: var(--text-light); }
-
         .header-mode-btn {
             background: transparent;
             border: 2px solid var(--primary);
             color: var(--primary);
-            padding: 6px 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 14px;
+            padding: 6px 10px; border-radius: 10px;
+            cursor: pointer; font-size: 14px;
         }
 
-        /* ── MESSAGES AREA ── */
         .messages-area {
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; overflow-y: auto;
             padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            display: flex; flex-direction: column; gap: 6px;
             background: var(--bg);
         }
-
-        .message-row {
-            display: flex;
-            flex-direction: column;
-        }
-        .message-row.sent { align-items: flex-end; }
+        .message-row { display: flex; flex-direction: column; }
+        .message-row.sent  { align-items: flex-end; }
         .message-row.received { align-items: flex-start; }
 
         .bubble {
             max-width: 72%;
             padding: 9px 14px;
             border-radius: 18px;
-            font-size: 0.88rem;
-            line-height: 1.45;
+            font-size: 0.88rem; line-height: 1.45;
             word-break: break-word;
         }
-
         .message-row.sent .bubble {
-            background: var(--primary);
-            color: white;
+            background: var(--primary); color: white;
             border-bottom-right-radius: 4px;
         }
-
         .message-row.received .bubble {
-            background: var(--card);
-            color: var(--text);
+            background: var(--card); color: var(--text);
             border: 1px solid var(--border);
             border-bottom-left-radius: 4px;
         }
-
         .bubble-time {
-            font-size: 0.65rem;
-            color: var(--text-light);
-            margin-top: 3px;
-            padding: 0 4px;
+            font-size: 0.65rem; color: var(--text-light);
+            margin-top: 3px; padding: 0 4px;
         }
 
-        /* ── TYPING INDICATOR ── */
         .typing-indicator {
-            display: none;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 4px 0;
+            display: none; align-items: flex-start;
+            gap: 8px; padding: 4px 0;
         }
         .typing-indicator.visible { display: flex; }
         .typing-dots {
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
+            border-radius: 18px; border-bottom-left-radius: 4px;
             padding: 10px 16px;
-            display: flex;
-            gap: 4px;
-            align-items: center;
+            display: flex; gap: 4px; align-items: center;
         }
         .dot {
             width: 7px; height: 7px;
-            background: var(--text-light);
-            border-radius: 50%;
+            background: var(--text-light); border-radius: 50%;
             animation: bounce 1.2s infinite;
         }
         .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -151,101 +109,68 @@
             30% { transform: translateY(-6px); }
         }
 
-        /* ── DATE SEPARATOR ── */
         .date-sep {
-            text-align: center;
-            font-size: 0.72rem;
-            color: var(--text-light);
-            margin: 10px 0;
-            position: relative;
+            text-align: center; font-size: 0.72rem;
+            color: var(--text-light); margin: 10px 0; position: relative;
         }
         .date-sep::before, .date-sep::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 35%;
-            height: 1px;
-            background: var(--border);
+            content: ''; position: absolute; top: 50%;
+            width: 35%; height: 1px; background: var(--border);
         }
         .date-sep::before { left: 0; }
-        .date-sep::after { right: 0; }
+        .date-sep::after  { right: 0; }
 
-        /* ── INPUT BAR ── */
         .input-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; gap: 10px;
             padding: 12px 16px;
             background: var(--card);
             border-top: 1px solid var(--border);
             flex-shrink: 0;
         }
-
         .msg-input {
-            flex: 1;
-            padding: 10px 16px;
-            border: 1.5px solid var(--border);
-            border-radius: 24px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.88rem;
-            outline: none;
+            flex: 1; padding: 10px 16px;
+            border: 1.5px solid var(--border); border-radius: 24px;
+            background: var(--bg); color: var(--text);
+            font-size: 0.88rem; outline: none;
             transition: border-color 0.2s;
-            resize: none;
-            font-family: inherit;
+            resize: none; font-family: inherit;
         }
         .msg-input:focus { border-color: var(--primary); }
-
         .send-btn {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: var(--primary);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
+            width: 42px; height: 42px; border-radius: 50%;
+            background: var(--primary); border: none;
+            cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 1.1rem; flex-shrink: 0;
             transition: opacity 0.2s, transform 0.1s;
         }
-        .send-btn:hover { opacity: 0.9; transform: scale(1.05); }
+        .send-btn:hover  { opacity: 0.9; transform: scale(1.05); }
         .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* ── WS STATUS ── */
         .ws-status {
-            text-align: center;
-            font-size: 0.72rem;
+            text-align: center; font-size: 0.72rem;
             padding: 4px 10px;
-            background: var(--bg);
-            color: var(--text-light);
+            background: var(--bg); color: var(--text-light);
             border-bottom: 1px solid var(--border);
         }
         .ws-status.connected { color: #10b981; background: rgba(16,185,129,0.07); }
-        .ws-status.error { color: var(--danger); background: rgba(239,68,68,0.07); }
+        .ws-status.error     { color: var(--danger); background: rgba(239,68,68,0.07); }
 
-        /* ── EMPTY STATE ── */
         .empty-messages {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-light);
-            gap: 8px;
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: var(--text-light); gap: 8px;
         }
         .empty-messages span { font-size: 2.5rem; }
-        .empty-messages p { font-size: 0.88rem; }
+        .empty-messages p    { font-size: 0.88rem; }
     </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="chat-header">
     <button class="back-btn" onclick="navigate('chat-list.html')">←</button>
     <div class="recipient-avatar" id="recipientAvatar">
-        ?
+
         <div class="recipient-online-dot" id="recipientOnlineDot"></div>
     </div>
     <div class="recipient-info">
@@ -255,16 +180,13 @@
     <button class="header-mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
 </div>
 
-<!-- WebSocket status bar -->
 <div class="ws-status" id="wsStatus">Connecting to chat...</div>
 
-<!-- Messages -->
 <div class="messages-area" id="messagesArea">
     <div class="empty-messages" id="emptyState">
         <span>💬</span>
         <p>Say hello!</p>
     </div>
-    <!-- Typing indicator -->
     <div class="typing-indicator" id="typingIndicator">
         <div class="typing-dots">
             <div class="dot"></div>
@@ -274,7 +196,6 @@
     </div>
 </div>
 
-<!-- Input bar -->
 <div class="input-bar">
     <textarea
             class="msg-input"
@@ -287,34 +208,33 @@
 </div>
 
 <script>
-    const API        = "http://localhost:8080";
-    const token      = localStorage.getItem("token");
-    const currentUserId  = localStorage.getItem("userId");
+    const API = "http://localhost:8080";
+
+    // ── FIX 3: Use "token" not "jwt" — must match what login.html saves ──
+    const token           = localStorage.getItem("token");
+    const currentUserId   = localStorage.getItem("userId");
     const currentUsername = localStorage.getItem("username");
 
     if (!token) { location.href = "login.html"; }
 
-    // Get recipient from URL params
-    const params = new URLSearchParams(window.location.search);
+    const params            = new URLSearchParams(window.location.search);
     const recipientId       = params.get("userId");
     const recipientUsername = params.get("username") || "User";
 
     if (!recipientId) { location.href = "chat-list.html"; }
 
-    // ── UI REFS ──
-    const messagesArea   = document.getElementById("messagesArea");
-    const msgInput       = document.getElementById("msgInput");
-    const sendBtn        = document.getElementById("sendBtn");
-    const wsStatus       = document.getElementById("wsStatus");
+    const messagesArea    = document.getElementById("messagesArea");
+    const msgInput        = document.getElementById("msgInput");
+    const sendBtn         = document.getElementById("sendBtn");
+    const wsStatus        = document.getElementById("wsStatus");
     const typingIndicator = document.getElementById("typingIndicator");
-    const emptyState     = document.getElementById("emptyState");
+    const emptyState      = document.getElementById("emptyState");
 
-    // Set header info
     document.getElementById("recipientName").textContent = recipientUsername;
     document.getElementById("recipientAvatar").childNodes[0].textContent =
         recipientUsername.charAt(0).toUpperCase();
 
-    // ── DARK MODE ──
+    // ── Dark mode ──
     const modeBtn = document.getElementById("modeBtn");
     if (localStorage.getItem("mode") === "dark") {
         document.body.classList.add("dark");
@@ -327,6 +247,7 @@
         modeBtn.innerText = dark ? "☀️" : "🌙";
     }
 
+    // ── FIX 6: Always use navigate() to avoid false offline beacon ──
     function navigate(url) {
         sessionStorage.setItem('navigating', 'true');
         location.href = url;
@@ -347,18 +268,17 @@
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    // ── RENDER A MESSAGE BUBBLE ──
     function renderMessage(msg, type) {
         emptyState.style.display = 'none';
-
-        // Remove typing indicator so new message appears above it
         typingIndicator.remove();
 
         const row = document.createElement('div');
         row.className = `message-row ${type}`;
 
         const content = msg.content || msg.text || '';
-        const time = msg.timestamp ? formatTime(msg.timestamp) : formatTime(new Date().toISOString());
+        const time    = msg.timestamp
+            ? formatTime(msg.timestamp)
+            : formatTime(new Date().toISOString());
 
         row.innerHTML = `
             <div class="bubble">${escapeHtml(content)}</div>
@@ -366,7 +286,6 @@
         `;
 
         messagesArea.appendChild(row);
-        // Re-append typing indicator at bottom
         messagesArea.appendChild(typingIndicator);
         scrollToBottom();
     }
@@ -375,105 +294,95 @@
         messagesArea.scrollTop = messagesArea.scrollHeight;
     }
 
-    // ── WEBSOCKET (STOMP over SockJS) ──
-    let stompClient = null;
+    // ── WebSocket ──
+    let stompClient  = null;
     let typingTimeout = null;
 
     function connectWebSocket() {
         wsStatus.textContent = 'Connecting...';
-        wsStatus.className = 'ws-status';
+        wsStatus.className   = 'ws-status';
 
         try {
             const socket = new SockJS(`${API}/ws`);
             stompClient = new StompJs.Client({
                 webSocketFactory: () => socket,
-                connectHeaders: {
-                    Authorization: 'Bearer ' + token
-                },
+                connectHeaders: { Authorization: 'Bearer ' + token },
                 reconnectDelay: 5000,
 
-                onConnect: function() {
+                onConnect: function () {
                     wsStatus.textContent = '✓ Connected';
-                    wsStatus.className = 'ws-status connected';
-                    sendBtn.disabled = false;
+                    wsStatus.className   = 'ws-status connected';
+                    sendBtn.disabled     = false;
 
-                    // ── SUBSCRIBE: receive private messages sent to YOU ──
-                    // The backend uses convertAndSendToUser(receiver, "/queue/messages", msg)
-                    // Spring prefixes this as /user/{username}/queue/messages
-                    stompClient.subscribe('/user/' + currentUsername + '/queue/messages', function(frame) {
-                        const msg = JSON.parse(frame.body);
-                        // Only show if this message is from our current chat partner
-                        if (String(msg.sender) === String(recipientId) ||
-                            msg.sender === recipientUsername) {
-                            renderMessage(msg, 'received');
+                    stompClient.subscribe(
+                        '/user/' + currentUsername + '/queue/messages',
+                        function (frame) {
+                            const msg = JSON.parse(frame.body);
+                            if (String(msg.sender) === String(recipientId) ||
+                                msg.sender === recipientUsername) {
+                                renderMessage(msg, 'received');
+                            }
                         }
-                    });
+                    );
 
-                    // ── SUBSCRIBE: typing indicator ──
-                    stompClient.subscribe('/user/' + currentUsername + '/queue/typing', function(frame) {
-                        const data = JSON.parse(frame.body);
-                        if (String(data.senderId) === String(recipientId)) {
-                            showTyping();
+                    stompClient.subscribe(
+                        '/user/' + currentUsername + '/queue/typing',
+                        function (frame) {
+                            const data = JSON.parse(frame.body);
+                            if (String(data.senderId) === String(recipientId)) {
+                                showTyping();
+                            }
                         }
-                    });
+                    );
 
-                    // Update recipient online status
                     document.getElementById("recipientStatus").textContent = 'Online';
-
-                    // Load chat history after connecting
                     loadChatHistory();
                 },
 
-                onDisconnect: function() {
+                onDisconnect: function () {
                     wsStatus.textContent = '⚠ Disconnected — reconnecting...';
-                    wsStatus.className = 'ws-status error';
-                    sendBtn.disabled = true;
+                    wsStatus.className   = 'ws-status error';
+                    sendBtn.disabled     = true;
                     document.getElementById("recipientStatus").textContent = 'Reconnecting...';
                 },
 
-                onStompError: function(frame) {
+                onStompError: function () {
                     wsStatus.textContent = '✗ Connection error';
-                    wsStatus.className = 'ws-status error';
-                    sendBtn.disabled = true;
+                    wsStatus.className   = 'ws-status error';
+                    sendBtn.disabled     = true;
                 }
             });
 
             stompClient.activate();
-
-        } catch(e) {
+        } catch (e) {
             wsStatus.textContent = '✗ Could not connect to WebSocket';
-            wsStatus.className = 'ws-status error';
+            wsStatus.className   = 'ws-status error';
         }
     }
 
-    // ── SEND A MESSAGE ──
     function sendMessage() {
         const content = msgInput.value.trim();
         if (!content || !stompClient || !stompClient.connected) return;
 
-        // Message object matches ChatMessage.java fields exactly:
-        // sender, receiver, content, text
         const message = {
-            sender: currentUsername,
-            receiver: recipientUsername,
-            content: content,
-            text: content,
+            sender:    currentUsername,
+            receiver:  recipientUsername,
+            content:   content,
+            text:      content,
             timestamp: new Date().toISOString()
         };
 
-        // Send via WebSocket to /app/chat (matches @MessageMapping("/chat"))
         stompClient.publish({
             destination: '/app/chat',
             body: JSON.stringify(message)
         });
 
-        // Show in UI immediately
         renderMessage(message, 'sent');
-        msgInput.value = '';
+        msgInput.value      = '';
         msgInput.style.height = 'auto';
     }
 
-    // ── TYPING INDICATOR ──
+    // ── Typing indicator ──
     let typingTimer = null;
     function showTyping() {
         typingIndicator.classList.add('visible');
@@ -491,35 +400,28 @@
             stompClient.publish({
                 destination: '/app/chat.typing',
                 body: JSON.stringify({
-                    senderId: currentUserId,
+                    senderId:   currentUserId,
                     receiverId: recipientId
                 })
             });
         }, 300);
     }
 
-    // ── LOAD CHAT HISTORY (REST API) ──
+    // ── Load chat history ──
     async function loadChatHistory() {
         try {
-            // Try to load message history between current user and recipient
             const res = await fetch(`${API}/api/messages/${recipientId}`, {
                 headers: authHeaders()
             });
-
-            if (!res.ok) {
-                // If endpoint doesn't exist yet, just show empty chat
-                console.warn('Chat history endpoint not available yet');
-                return;
-            }
+            if (!res.ok) return;
 
             const messages = await res.json();
             if (!messages || !messages.length) return;
 
             emptyState.style.display = 'none';
 
-            // Add a date separator
             const sep = document.createElement('div');
-            sep.className = 'date-sep';
+            sep.className   = 'date-sep';
             sep.textContent = 'Earlier';
             messagesArea.insertBefore(sep, typingIndicator);
 
@@ -528,29 +430,26 @@
                     String(msg.senderId) === String(currentUserId);
                 renderMessage(msg, isMine ? 'sent' : 'received');
             });
-
-        } catch(e) {
-            // History not available — that's fine, chat still works via WebSocket
+        } catch (e) {
             console.warn('Could not load history:', e);
         }
     }
 
-    // ── INPUT EVENTS ──
-    msgInput.addEventListener('keydown', function(e) {
+    // ── Input events ──
+    msgInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
     });
 
-    msgInput.addEventListener('input', function() {
-        // Auto-resize textarea
+    msgInput.addEventListener('input', function () {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         handleTyping();
     });
 
-    // ── ONLINE STATUS: check recipient ──
+    // ── Online status ──
     async function checkRecipientStatus() {
         try {
             const res = await fetch(`${API}/api/users/${recipientId}`, {
@@ -558,17 +457,18 @@
             });
             if (!res.ok) return;
             const user = await res.json();
-            const dot = document.getElementById('recipientOnlineDot');
+            const dot  = document.getElementById('recipientOnlineDot');
             if (user.online) {
                 dot.classList.add('is-online');
                 document.getElementById('recipientStatus').textContent = 'Online';
             } else {
                 document.getElementById('recipientStatus').textContent = 'Offline';
             }
-        } catch(e) { /* ignore */ }
+        } catch (e) { /* ignore */ }
     }
 
-    // ── CLEANUP on page leave ──
+
+    // ── Cleanup ──
     window.addEventListener('beforeunload', () => {
         const navigating = sessionStorage.getItem('navigating');
         if (currentUserId && !navigating) {
@@ -578,10 +478,8 @@
         if (stompClient) stompClient.deactivate();
     });
 
-    // ── START ──
     checkRecipientStatus();
     connectWebSocket();
 </script>
 </body>
 </html>
-

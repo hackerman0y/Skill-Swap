@@ -4,64 +4,217 @@
     <meta charset="UTF-8">
     <title>SkillSwap - Messages</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .chat-list-header {
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 12px rgba(108,99,255,0.07);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar h2 {
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: -0.3px;
+        }
+
+        .nav-right { display: flex; gap: 8px; align-items: center; }
+
+        .nav-icon-btn {
+            background: transparent;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: background 0.15s, color 0.15s;
+        }
+        .nav-icon-btn:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text-light);
+            padding: 6px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .mode-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ── PAGE LAYOUT ── */
+        .page-wrapper {
+            max-width: 100%;
+            margin: 0;
+            padding: 0 0 40px;
+        }
+
+        /* ── HEADER SECTION ── */
+        .messages-header {
+            padding: 28px 24px 16px;
             background: var(--card);
             border-bottom: 1px solid var(--border);
             position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .chat-list-header h3 { color: var(--primary); margin: 0; }
-
-        .chat-list-wrapper {
-            max-width: 680px;
-            margin: 0 auto;
+            top: 65px;
+            z-index: 9;
         }
 
+        .messages-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .messages-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .messages-count {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            font-weight: 500;
+        }
+
+        /* ── SEARCH BAR ── */
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-bar:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108,99,255,0.1);
+        }
+        .search-bar::placeholder { color: var(--text-light); }
+
+        /* ── CHAT LIST ── */
+        .chat-list { display: flex; flex-direction: column; }
+
+        .section-label {
+            padding: 14px 24px 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+        }
+
+        /* ── CHAT ITEM ── */
         .chat-item {
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
             cursor: pointer;
-            background: var(--card);
             transition: background 0.15s;
+            position: relative;
         }
-        .chat-item:hover { background: var(--bg); }
+        .chat-item:hover { background: rgba(108,99,255,0.04); }
+        .chat-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 80px;
+            right: 24px;
+            height: 1px;
+            background: var(--border);
+        }
+        .chat-item:last-child::after { display: none; }
 
+        /* ── AVATAR ── */
         .chat-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--primary);
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
+            font-weight: 700;
+            font-size: 1.15rem;
             flex-shrink: 0;
             position: relative;
+            box-shadow: 0 4px 12px rgba(108,99,255,0.25);
         }
+
+        /* Different avatar colors for variety */
+        .chat-avatar.color-1 { background: linear-gradient(135deg, #6c63ff, #8b5cf6); }
+        .chat-avatar.color-2 { background: linear-gradient(135deg, #10b981, #059669); }
+        .chat-avatar.color-3 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .chat-avatar.color-4 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .chat-avatar.color-5 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 
         .online-ring {
             position: absolute;
-            bottom: 1px;
-            right: 1px;
-            width: 12px;
-            height: 12px;
+            bottom: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            border: 2px solid var(--card);
+            border: 2.5px solid var(--card);
             background: #64748b;
+            transition: background 0.3s;
         }
         .online-ring.is-online { background: #10b981; }
 
+        /* ── META ── */
         .chat-meta { flex: 1; min-width: 0; }
 
         .chat-meta-top {
@@ -73,48 +226,157 @@
 
         .chat-username {
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--text);
+            letter-spacing: -0.1px;
         }
 
         .chat-time {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--text-light);
+            font-weight: 500;
         }
 
         .chat-preview {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--text-light);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .unread-badge {
-            background: var(--primary);
-            color: white;
+        .online-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: #10b981;
+            font-weight: 600;
+        }
+        .online-pill::before {
+            content: '';
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            font-size: 0.65rem;
-            font-weight: bold;
-            width: 18px;
-            height: 18px;
+            background: #10b981;
+            display: inline-block;
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .chat-arrow {
+            color: var(--border);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            transition: color 0.15s, transform 0.15s;
+        }
+        .chat-item:hover .chat-arrow {
+            color: var(--primary);
+            transform: translateX(3px);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-chat {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-light);
+        }
+        .empty-chat .empty-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 24px;
+            background: rgba(108,99,255,0.08);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 16px;
+        }
+        .empty-chat h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .empty-chat p { font-size: 0.85rem; }
+
+        /* ── LOADING SKELETON ── */
+        .skeleton-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 24px;
+        }
+        .skeleton-avatar {
+            width: 52px; height: 52px;
+            border-radius: 16px;
+            background: var(--border);
+            flex-shrink: 0;
+            animation: shimmer 1.4s infinite;
+        }
+        .skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .skeleton-line {
+            height: 12px;
+            border-radius: 6px;
+            background: var(--border);
+            animation: shimmer 1.4s infinite;
+        }
+        .skeleton-line.short { width: 55%; }
+        .skeleton-line.shorter { width: 35%; }
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── ONLINE USERS STRIP ── */
+        .online-strip {
+            padding: 16px 24px 0;
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .online-strip::-webkit-scrollbar { display: none; }
+
+        .online-user-bubble {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
             flex-shrink: 0;
         }
 
-        .empty-chat {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-light);
+        .online-bubble-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            position: relative;
+            border: 2.5px solid #10b981;
+            box-shadow: 0 0 0 1px rgba(16,185,129,0.3);
         }
-        .empty-chat p { margin-top: 10px; font-size: 0.9rem; }
 
-        .chat-list-loading {
-            text-align: center;
-            padding: 40px;
+        .online-bubble-name {
+            font-size: 0.68rem;
             color: var(--text-light);
+            font-weight: 500;
+            max-width: 48px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -123,17 +385,47 @@
 <div class="navbar">
     <h2 onclick="navigate('index.html')">SkillSwap</h2>
     <div class="nav-right">
+        <button class="nav-icon-btn" onclick="navigate('index.html')" title="Home">🏠</button>
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
     </div>
 </div>
 
-<div class="chat-list-wrapper">
-    <div class="chat-list-header">
-        <h3>💬 Messages</h3>
+<div class="page-wrapper">
+
+    <!-- Header + Search -->
+    <div class="messages-header">
+        <div class="messages-header-top">
+            <div class="messages-title">💬 Messages</div>
+            <span class="messages-count" id="userCount">Loading...</span>
+        </div>
+        <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+                    class="search-bar"
+                    id="searchBar"
+                    type="text"
+                    placeholder="Search people..."
+                    oninput="filterUsers()"
+            />
+        </div>
     </div>
-    <div id="chatListContainer">
-        <div class="chat-list-loading">Loading conversations...</div>
+
+    <!-- Online users strip -->
+    <div class="online-strip" id="onlineStrip" style="display:none;"></div>
+
+    <!-- Chat list -->
+    <div class="chat-list" id="chatListContainer">
+        <!-- Skeleton loading -->
+        ${[1,2,3,4].map(() => `
+        <div class="skeleton-item">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-lines">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+        </div>`).join('')}
     </div>
+
 </div>
 
 <script>
@@ -170,67 +462,118 @@
         return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
-    function timeAgo(isoString) {
-        if (!isoString) return '';
-        const d = new Date(isoString);
-        const now = new Date();
-        const diff = Math.floor((now - d) / 1000);
-        if (diff < 60) return 'now';
-        if (diff < 3600) return Math.floor(diff / 60) + 'm';
-        if (diff < 86400) return Math.floor(diff / 3600) + 'h';
-        return d.toLocaleDateString();
+    const avatarColors = ['color-1','color-2','color-3','color-4','color-5'];
+    function avatarColor(username) {
+        let hash = 0;
+        for (let c of (username || '')) hash += c.charCodeAt(0);
+        return avatarColors[hash % avatarColors.length];
+    }
+
+    let allUsers = [];
+
+    function renderUsers(users) {
+        const container = document.getElementById("chatListContainer");
+        const count     = document.getElementById("userCount");
+
+        if (!users.length) {
+            count.textContent = '0 people';
+            container.innerHTML = `
+                <div class="empty-chat">
+                    <div class="empty-icon">💬</div>
+                    <h4>No one here yet</h4>
+                    <p>Invite a friend to start swapping skills!</p>
+                </div>`;
+            return;
+        }
+
+        count.textContent = `${users.length} ${users.length === 1 ? 'person' : 'people'}`;
+
+        const onlineUsers  = users.filter(u => u.online);
+        const offlineUsers = users.filter(u => !u.online);
+
+        // Online strip
+        const strip = document.getElementById("onlineStrip");
+        if (onlineUsers.length) {
+            strip.style.display = 'flex';
+            strip.innerHTML = onlineUsers.map(u => `
+                <div class="online-user-bubble"
+                     onclick="navigate('chat.html?userId=${u.id}&username=${encodeURIComponent(u.username)}')">
+                    <div class="online-bubble-avatar ${avatarColor(u.username)}">
+                        ${escapeHtml((u.username?.charAt(0) || 'U').toUpperCase())}
+                    </div>
+                    <span class="online-bubble-name">${escapeHtml(u.username)}</span>
+                </div>
+            `).join('');
+        } else {
+            strip.style.display = 'none';
+        }
+
+        // Build list
+        let html = '';
+
+        if (onlineUsers.length) {
+            html += `<div class="section-label">Online now</div>`;
+            html += onlineUsers.map(u => renderChatItem(u)).join('');
+        }
+
+        if (offlineUsers.length) {
+            html += `<div class="section-label">All people</div>`;
+            html += offlineUsers.map(u => renderChatItem(u)).join('');
+        }
+
+        container.innerHTML = html;
+    }
+
+    function renderChatItem(user) {
+        const initial = (user.username?.charAt(0) || 'U').toUpperCase();
+        const color   = avatarColor(user.username);
+        return `
+        <div class="chat-item"
+             onclick="navigate('chat.html?userId=${user.id}&username=${encodeURIComponent(user.username)}')">
+            <div class="chat-avatar ${color}">
+                ${escapeHtml(initial)}
+                <div class="online-ring ${user.online ? 'is-online' : ''}"></div>
+            </div>
+            <div class="chat-meta">
+                <div class="chat-meta-top">
+                    <span class="chat-username">${escapeHtml(user.username)}</span>
+                    <span class="chat-time">${user.online ? '' : ''}</span>
+                </div>
+                <div class="chat-preview">
+                    ${user.online
+            ? `<span class="online-pill">Active now</span>`
+            : `Tap to start chatting`}
+                </div>
+            </div>
+            <span class="chat-arrow">›</span>
+        </div>`;
+    }
+
+    function filterUsers() {
+        const q = document.getElementById("searchBar").value.toLowerCase();
+        const filtered = q
+            ? allUsers.filter(u => u.username?.toLowerCase().includes(q))
+            : allUsers;
+        renderUsers(filtered);
     }
 
     async function loadChatList() {
-        const container = document.getElementById("chatListContainer");
         try {
-            // Load all users so Moataz can start a chat with anyone
             const res = await fetch(`${API}/api/users`, { headers: authHeaders() });
 
-            if (res.status === 401 || res.status === 403) {
-                navigate('login.html'); return;
-            }
-
+            if (res.status === 401 || res.status === 403) { navigate('login.html'); return; }
             if (!res.ok) throw new Error();
 
             const users = await res.json();
-            // Filter out current user
-            const others = users.filter(u => String(u.id) !== String(currentUserId));
-
-            if (!others.length) {
-                container.innerHTML = `
-                    <div class="empty-chat">
-                        <div style="font-size:2.5rem;">💬</div>
-                        <p>No other users yet. Invite a friend!</p>
-                    </div>`;
-                return;
-            }
-
-            container.innerHTML = others.map(user => {
-                const initial = (user.username?.charAt(0) || "U").toUpperCase();
-                return `
-                <div class="chat-item" onclick="navigate('chat.html?userId=${user.id}&username=${encodeURIComponent(user.username)}')">
-                    <div class="chat-avatar">
-                        ${escapeHtml(initial)}
-                        <div class="online-ring ${user.online ? 'is-online' : ''}"></div>
-                    </div>
-                    <div class="chat-meta">
-                        <div class="chat-meta-top">
-                            <span class="chat-username">${escapeHtml(user.username)}</span>
-                            <span class="chat-time">${user.online ? '🟢' : ''}</span>
-                        </div>
-                        <div class="chat-preview">
-                            ${user.online ? 'Online now' : 'Tap to start chatting'}
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+            allUsers = users.filter(u => String(u.id) !== String(currentUserId));
+            renderUsers(allUsers);
 
         } catch (e) {
-            container.innerHTML = `
+            document.getElementById("chatListContainer").innerHTML = `
                 <div class="empty-chat">
-                    <div style="font-size:2rem;">⚠️</div>
-                    <p>Could not load users. Is the server running?</p>
+                    <div class="empty-icon">⚠️</div>
+                    <h4>Could not load</h4>
+                    <p>Is the server running on port 8080?</p>
                 </div>`;
         }
     }
@@ -244,6 +587,8 @@
     });
 
     loadChatList();
+    // Refresh online status every 30s
+    setInterval(loadChatList, 30000);
 </script>
 </body>
 </html>

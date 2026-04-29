@@ -8,11 +8,12 @@
 <body>
 
 <div class="navbar">
-    <h2 onclick="location.href='index.html'">SkillSwap</h2>
+    <h2 onclick="navigate('index.html')">SkillSwap</h2>
     <div class="nav-right">
-        <span class="profile" onclick="goProfile()">👤</span>
+        <!-- FIX 6: use navigate() not location.href directly -->
+        <span class="profile" onclick="navigate('profile.html')">👤</span>
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
-        <button class="btn-back" onclick="goBack()">← Back</button>
+        <button class="btn-back" onclick="navigate('index.html')">← Back</button>
     </div>
 </div>
 
@@ -25,9 +26,15 @@
 </footer>
 
 <script>
-    const API = "http://localhost:8080"; // backend base URL
+    const API = "http://localhost:8080";
 
-    // dark mode
+    // ── FIX 6: Always use navigate() so offline beacon isn't falsely triggered ──
+    function navigate(url) {
+        sessionStorage.setItem('navigating', 'true');
+        location.href = url;
+    }
+
+    // ── Dark mode ──
     const modeBtn = document.getElementById("modeBtn");
     if (localStorage.getItem("mode") === "dark") {
         document.body.classList.add("dark");
@@ -40,11 +47,9 @@
         modeBtn.innerText = dark ? "☀️" : "🌙";
     }
 
-    // get id from URL
     const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
+    const id     = params.get("id");
 
-    // sanitize text
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, m =>
@@ -52,9 +57,16 @@
         );
     }
 
+    function authHeaders() {
+        const token = localStorage.getItem("token");
+        return {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        };
+    }
+
     const container = document.getElementById("details");
 
-    // fetch skill by id
     if (!id) {
         container.innerHTML = "<h3>Invalid skill</h3>";
     } else {
@@ -66,41 +78,77 @@
             .then(skill => {
                 const user = skill.user || {};
 
+                // ── FIX 8: Only ONE like button here, no duplicate ──
                 container.innerHTML = `
-                <h2>${escapeHtml(skill.name)}</h2>
+                    <h2>${escapeHtml(skill.name)}</h2>
 
-                <p><b>Category:</b> ${escapeHtml(skill.category)}</p>
+                    <p><b>Category:</b> ${escapeHtml(skill.category)}</p>
 
-                <div class="type-badge ${skill.type === 'teach' ? 'type-teach' : 'type-learn'}"
-                     style="display:inline-block; margin:10px 0;">
-                    ${skill.type === 'teach' ? 'TEACH' : 'LEARN'}
-                </div>
-
-                <p>${escapeHtml(skill.description || "")}</p>
-
-                <p>🔥 Popularity: ${skill.popularity || 0}</p>
-
-                <div class="user-info-detail">
-                    <div class="detail-avatar">
-                        ${(user.username?.charAt(0) || "U").toUpperCase()}
+                    <div class="type-badge ${skill.type === 'teach' ? 'type-teach' : 'type-learn'}"
+                         style="display:inline-block; margin:10px 0;">
+                        ${skill.type === 'teach' ? 'TEACH' : 'LEARN'}
                     </div>
-                    <div>
-                        <div><b>${escapeHtml(user.username || "Unknown")}</b></div>
-                        <div class="online-status">
-                            ${user.online ? '🟢 Online' : '⚫ Offline'}
+
+                    <p>${escapeHtml(skill.description || "")}</p>
+
+                    <p>🔥 Popularity: <span id="popCount">${skill.popularity || 0}</span></p>
+
+                    <button
+                        onclick="likeSkill(${skill.id})"
+                        style="margin-top:10px; padding:8px 20px; border-radius:20px;
+                               background:var(--primary); color:white; border:none; cursor:pointer;">
+                        ❤️ Like
+                    </button>
+
+                    <div class="user-info-detail">
+                        <div class="detail-avatar">
+                            ${(user.username?.charAt(0) || "U").toUpperCase()}
+                        </div>
+                        <div>
+                            <div><b>${escapeHtml(user.username || "Unknown")}</b></div>
+                            <div class="online-status">
+                                ${user.online ? '🟢 Online' : '⚫ Offline'}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
             })
             .catch(() => {
                 container.innerHTML = "<h3>Skill not found</h3>";
             });
     }
 
-    // navigation
-    function goBack() { window.location.href = "index.html"; }
-    function goProfile() { window.location.href = "profile.html"; }
+    async function likeSkill(skillId) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("Please login to like!");
+            navigate('login.html');
+            return;
+        }
+        try {
+            const res = await fetch(`${API}/api/skills/${skillId}/increase`, {
+                method: "PUT",
+                headers: authHeaders()
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                const popEl = document.getElementById("popCount");
+                if (popEl) popEl.textContent = updated.popularity || 0;
+            }
+        } catch (e) {
+            console.error("Like failed", e);
+        }
+    }
+
+    // ── Cleanup ──
+    window.addEventListener('beforeunload', () => {
+        const userId    = localStorage.getItem('userId');
+        const navigating = sessionStorage.getItem('navigating');
+        if (userId && !navigating) {
+            navigator.sendBeacon(`${API}/presence/offline/${userId}`);
+        }
+        sessionStorage.removeItem('navigating');
+    });
 </script>
 
 </body>
