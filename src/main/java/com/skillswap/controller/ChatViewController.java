@@ -24,4 +24,9 @@ public class ChatViewController {
     public String notifications() {
         return "forward:/notifications.html";
     }
+
+    @GetMapping("/store")
+    public String store() {
+        return "forward:/Store.html";
+    }
 }
