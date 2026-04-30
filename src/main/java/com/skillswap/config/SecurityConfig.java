@@ -67,7 +67,11 @@ public class SecurityConfig {
                                 "/chat/**",
                                 "/notifications",
                                 "/api/swaps/**",
-                                "/api/sessions/**"
+                                "/api/sessions/**",
+                                "/api/coins/**",
+                                "/api/store/**",
+                                "/api/notifications/**"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
