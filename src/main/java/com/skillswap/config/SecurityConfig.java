@@ -70,7 +70,8 @@ public class SecurityConfig {
                                 "/api/sessions/**",
                                 "/api/coins/**",
                                 "/api/store/**",
-                                "/api/notifications/**"
+                                "/api/notifications/**",
+                                "/store"
 
                         ).permitAll()
                         .anyRequest().authenticated()

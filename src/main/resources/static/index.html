@@ -13,6 +13,9 @@
         <span class="logo-text">SkillSwap</span>
     </h2>
     <div class="nav-right">
+        <div class="coin-nav-badge" onclick="navigate('Store.html')" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:700;">
+            🪙 <span id="navCoinCount">0</span>
+        </div>
         <span onclick="navigate('about.html')" style="cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--text-light);" title="About Us">About</span>
         <span onclick="navigate('contact.html')" style="cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--text-light);" title="Contact Us">Contact</span>
         <span onclick="navigate('chat-list.html')" style="cursor:pointer;" title="Messages">💬</span>
@@ -382,6 +385,20 @@
 
     loadSkills();
     loadUser();
+    async function loadNavCoins() {
+        const t = localStorage.getItem("token");
+        if (!t) return;
+        try {
+            const res = await fetch(`${API}/api/coins/balance`, {
+                headers: { "Authorization": `Bearer ${t}` }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const el = document.getElementById("navCoinCount");
+            if (el) el.textContent = data.balance;
+        } catch(e) {}
+    }
+    loadNavCoins();
 </script>
 </body>
 </html>
