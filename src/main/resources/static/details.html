@@ -4,31 +4,151 @@
     <meta charset="UTF-8">
     <title>Skill Details</title>
     <link rel="stylesheet" href="style.css">
+
+    <style>
+        .details-container {
+            max-width: 850px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+
+        .details-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+            position: relative;
+        }
+
+        .details-card h2 {
+            margin-bottom: 12px;
+            font-size: 1.6rem;
+        }
+
+        .meta {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .type-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+        }
+
+
+
+        .description {
+            margin: 14px 0;
+            color: var(--text-light);
+            line-height: 1.7;
+        }
+
+        .popularity {
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .actions {
+            margin-top: 22px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .like-btn {
+            padding: 10px 28px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #ff4d6d, #ff758f);
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .like-btn:hover {
+            transform: scale(0.95);
+            opacity: 0.9;
+        }
+
+        .user-info-detail {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .detail-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .online-status {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+    </style>
 </head>
 <body>
 
-<div class="navbar">
-    <h2 onclick="navigate('index.html')">SkillSwap</h2>
+<nav class="navbar">
+    <h2 onclick="navigate('index.html')">🔄 SkillSwap</h2>
+
     <div class="nav-right">
-        <!-- FIX 6: use navigate() not location.href directly -->
-        <span class="profile" onclick="navigate('profile.html')">👤</span>
+        <a href="index.html" style="text-decoration:none" title="Home">
+            <button>🏠</button>
+        </a>
+
+        <button onclick="navigate('profile.html')">Profile</button>
+
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
-        <button class="btn-back" onclick="navigate('index.html')">← Back</button>
     </div>
-</div>
+</nav>
 
 <div class="details-container">
     <div class="details-card" id="details">Loading...</div>
 </div>
 
 <footer>
-    © 2026 SkillSwap — Learn & Teach Skills Easily 🚀
+    <p>
+        © 2026 SkillSwap — Learn & Teach Skills Easily 🚀 |
+        <a href="about.html">About</a> |
+        <a href="contact.html">Contact</a>
+    </p>
 </footer>
 
 <script>
     const API = "http://localhost:8080";
 
-    // ── FIX 6: Always use navigate() so offline beacon isn't falsely triggered ──
+
     function navigate(url) {
         sessionStorage.setItem('navigating', 'true');
         location.href = url;
@@ -65,6 +185,7 @@
         };
     }
 
+
     const container = document.getElementById("details");
 
     if (!id) {
@@ -81,24 +202,24 @@
                 // ── FIX 8: Only ONE like button here, no duplicate ──
                 container.innerHTML = `
                     <h2>${escapeHtml(skill.name)}</h2>
-
-                    <p><b>Category:</b> ${escapeHtml(skill.category)}</p>
-
-                    <div class="type-badge ${skill.type === 'teach' ? 'type-teach' : 'type-learn'}"
-                         style="display:inline-block; margin:10px 0;">
-                        ${skill.type === 'teach' ? 'TEACH' : 'LEARN'}
+                    <div class="meta">
+                        <span class="category">${escapeHtml(skill.category)}</span>
+                        <span class="type-badge ${skill.type === 'teach' ? 'type-teach' : 'type-learn'}">
+                            ${skill.type === 'teach' ? 'TEACH' : 'LEARN'}
+                        </span>
                     </div>
 
-                    <p>${escapeHtml(skill.description || "")}</p>
+                    <p class="description">
+                        ${escapeHtml(skill.description || "No description provided.")}
+                    </p>
 
-                    <p>🔥 Popularity: <span id="popCount">${skill.popularity || 0}</span></p>
+                    <div class="popularity">
+                        🔥 Popularity: <span id="popCount">${skill.popularity || 0}</span>
+                    </div>
 
-                    <button
-                        onclick="likeSkill(${skill.id})"
-                        style="margin-top:10px; padding:8px 20px; border-radius:20px;
-                               background:var(--primary); color:white; border:none; cursor:pointer;">
-                        ❤️ Like
-                    </button>
+                  <div class="actions">
+    <button class="like-btn" onclick="likeSkill(${skill.id})">❤️ Like </button>
+                </div>
 
                     <div class="user-info-detail">
                         <div class="detail-avatar">
@@ -150,6 +271,6 @@
         sessionStorage.removeItem('navigating');
     });
 </script>
-
+<script src="main.js"></script>
 </body>
 </html>

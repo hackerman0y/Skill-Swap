@@ -2,14 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SkillSwap</title>
+    <title>🔄SkillSwap</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="navbar">
-    <h2 onclick="navigate('index.html')">SkillSwap</h2>
+    <h2 class="logo" onclick="navigate('index.html')">
+        <span class="logo-icon">🔄</span>
+        <span class="logo-text">SkillSwap</span>
+    </h2>
     <div class="nav-right">
+        <span onclick="navigate('about.html')" style="cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--text-light);" title="About Us">About</span>
+        <span onclick="navigate('contact.html')" style="cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--text-light);" title="Contact Us">Contact</span>
         <span onclick="navigate('chat-list.html')" style="cursor:pointer;" title="Messages">💬</span>
         <span onclick="navigate('notifications.html')" style="cursor:pointer;" title="Notifications">🔔</span>
         <span onclick="toggleFilters()" style="cursor:pointer;">⚙️</span>
@@ -131,13 +136,18 @@
         return false;
     }
 
+    document.addEventListener('DOMContentLoaded', () => {
+        sessionStorage.removeItem('navigating');
+        loadSkills();
+        loadUser();
+    });
+
     window.addEventListener('beforeunload', () => {
         const userId     = localStorage.getItem('userId');
         const navigating = sessionStorage.getItem('navigating');
         if (userId && !navigating) {
             navigator.sendBeacon(`${API}/presence/offline/${userId}`);
         }
-        sessionStorage.removeItem('navigating');
     });
 
     async function loadSkills() {
@@ -202,7 +212,6 @@
                 <div class="card-footer">
                     <div class="popularity">🔥 ${skill.popularity || 0}</div>
                     <div class="action-group">
-                        <!-- FIX 8: Single like button only, no duplicate at top-right -->
                         <button class="action-btn"
                             onclick="event.stopPropagation(); increasePopularity(${skill.id})">❤️</button>
                         ${isOwner ? `
