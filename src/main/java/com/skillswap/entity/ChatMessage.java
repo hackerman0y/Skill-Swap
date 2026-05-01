@@ -41,4 +41,6 @@ public class ChatMessage {
             content = text;
         }
     }
+    @Column(nullable = false)
+    private Boolean isRead = false;
 }

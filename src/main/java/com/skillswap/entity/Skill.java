@@ -19,6 +19,11 @@ public class Skill {
     private String type; // teach or learn
     private String description;
     private Integer popularity;
+
+    // ✅ NEW FIELDS
+    private String skillToTeach;
+    private String skillToLearn;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

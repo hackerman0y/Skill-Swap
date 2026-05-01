@@ -2,25 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>🔄SkillSwap</title>
+    <title>SkillSwap</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="navbar">
-    <h2 class="logo" onclick="navigate('index.html')">
-        <span class="logo-icon">🔄</span>
-        <span class="logo-text">SkillSwap</span>
+    <h2 onclick="navigate('index.html')" style="display:flex;align-items:center;gap:8px;">
+        🔄 SkillSwap
     </h2>
-    <div class="nav-right">
-        <div class="coin-nav-badge" onclick="navigate('Store.html')" style="cursor:pointer; display:flex; align-items:center; gap:6px; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:700;">
-            🪙 <span id="navCoinCount">0</span>
+
+    <!-- Hamburger for mobile -->
+    <button class="hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
+
+    <div class="nav-right" id="navRight">
+        <!-- 🪙 LIVE COIN COUNTER -->
+        <div onclick="navigate('store.html')" title="Go to Store" style="
+            display:flex; align-items:center; gap:6px;
+            background:linear-gradient(135deg,#f59e0b,#d97706);
+            color:white; padding:6px 14px; border-radius:20px;
+            font-size:0.82rem; font-weight:700;
+            box-shadow:0 2px 8px rgba(245,158,11,0.35);
+            cursor:pointer; transition:opacity 0.2s; flex-shrink:0;">
+            🪙 <span id="navCoinCount">—</span>
         </div>
-        <span onclick="navigate('about.html')" style="cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--text-light);" title="About Us">About</span>
-        <span onclick="navigate('contact.html')" style="cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--text-light);" title="Contact Us">Contact</span>
-        <span onclick="navigate('chat-list.html')" style="cursor:pointer;" title="Messages">💬</span>
+        <!-- 🛍️ STORE -->
+        <span onclick="navigate('store.html')" style="cursor:pointer;" title="Store">🛍️</span>
+        <!-- 💬 CHAT WITH UNREAD BADGE -->
+        <div style="position:relative; display:inline-block; cursor:pointer;"
+             onclick="navigate('chat-list.html')" title="Messages">
+            💬
+            <span id="chatBadge" style="
+                display:none;
+                position:absolute; top:-6px; right:-8px;
+                background:#ef4444; color:white;
+                border-radius:50%; width:18px; height:18px;
+                font-size:0.62rem; font-weight:700;
+                align-items:center; justify-content:center;
+                border:2px solid var(--card);">
+            </span>
+        </div>
         <span onclick="navigate('notifications.html')" style="cursor:pointer;" title="Notifications">🔔</span>
-        <span onclick="toggleFilters()" style="cursor:pointer;">⚙️</span>
+        <span onclick="toggleFilters()" style="cursor:pointer;" title="Filters">⚙️</span>
         <div id="filtersBox" class="filters-box">
             <select id="catFilter">
                 <option value="">All</option>
@@ -38,10 +63,51 @@
             </select>
         </div>
         <span id="navUser"></span>
-        <span onclick="navigate('profile.html')" style="cursor:pointer;">👤</span>
+        <span onclick="navigate('profile.html')" style="cursor:pointer;" title="Profile">👤</span>
+        <span onclick="navigate('about.html')" style="cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--text-light);" title="About">About</span>
+        <span onclick="navigate('contact.html')" style="cursor:pointer; font-size:0.82rem; font-weight:600; color:var(--text-light);" title="Contact">Contact</span>
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
     </div>
 </div>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-nav" id="mobileNav">
+    <span onclick="navigate('index.html'); closeMobileNav()">🏠 Home</span>
+    <span onclick="navigate('store.html'); closeMobileNav()">🛍️ Store &nbsp;<span id="mobileCoins" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:2px 8px;border-radius:20px;font-size:0.75rem;font-weight:700;">—</span></span>
+    <span onclick="navigate('chat-list.html'); closeMobileNav()">💬 Messages</span>
+    <span onclick="navigate('notifications.html'); closeMobileNav()">🔔 Notifications</span>
+    <span onclick="navigate('profile.html'); closeMobileNav()">👤 Profile</span>
+    <span onclick="navigate('about.html'); closeMobileNav()">ℹ️ About</span>
+    <span onclick="navigate('contact.html'); closeMobileNav()">✉️ Contact</span>
+    <span onclick="closeMobileNav(); logout()" style="color:var(--danger);">🚪 Logout</span>
+</div>
+
+<!-- Bottom navigation (mobile only) -->
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <div class="bottom-nav-item active" onclick="navigate('index.html')">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+        </div>
+        <div class="bottom-nav-item" onclick="navigate('chat-list.html')">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Chat</span>
+            <span class="bottom-nav-badge" id="bottomChatBadge" style="display:none;"></span>
+        </div>
+        <div class="bottom-nav-item" onclick="openModal()">
+            <span class="nav-icon" style="font-size:1.6rem; color:var(--primary);">＋</span>
+            <span class="nav-label">Add</span>
+        </div>
+        <div class="bottom-nav-item" onclick="navigate('store.html')">
+            <span class="nav-icon">🛍️</span>
+            <span class="nav-label">Store</span>
+        </div>
+        <div class="bottom-nav-item" onclick="navigate('profile.html')">
+            <span class="nav-icon">👤</span>
+            <span class="nav-label">Profile</span>
+        </div>
+    </div>
+</nav>
 
 <div class="controls">
     <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search skill...">
@@ -53,7 +119,7 @@
 <div class="modal" id="modal">
     <div class="modal-content">
         <h3>✨ New Skill</h3>
-        <input id="name" placeholder="Skill name">
+        <input id="name" placeholder="Skill name (e.g. Python, Guitar)">
         <select id="cat">
             <option value="">Category</option>
             <option>Programming</option>
@@ -69,6 +135,8 @@
             <option value="teach">📖 Teach</option>
             <option value="learn">📚 Learn</option>
         </select>
+        <input id="skillToTeach" placeholder="📖 What can you teach? (e.g. JavaScript)">
+        <input id="skillToLearn" placeholder="📚 What do you want to learn? (e.g. Design)">
         <div class="modal-buttons">
             <button class="cancel-btn" onclick="resetForm()">Cancel</button>
             <button class="submit-btn" id="addBtn" onclick="addSkill()">Save</button>
@@ -139,18 +207,13 @@
         return false;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        sessionStorage.removeItem('navigating');
-        loadSkills();
-        loadUser();
-    });
-
     window.addEventListener('beforeunload', () => {
         const userId     = localStorage.getItem('userId');
         const navigating = sessionStorage.getItem('navigating');
         if (userId && !navigating) {
             navigator.sendBeacon(`${API}/presence/offline/${userId}`);
         }
+        sessionStorage.removeItem('navigating');
     });
 
     async function loadSkills() {
@@ -186,10 +249,13 @@
             return;
         }
         const currentUser = getCurrentUser();
+        const userId      = localStorage.getItem("userId");
+        const likedSkills = JSON.parse(localStorage.getItem(`likedSkills_${userId}`) || "[]");
         container.innerHTML = skills.map(skill => {
             const user     = skill.user || {};
             const username = user.username || "Unknown";
             const isOwner  = currentUser && (skill.user?.id === currentUser.id);
+            const isLiked  = likedSkills.includes(skill.id);
             return `
             <div class="skill-card" onclick="navigate('details.html?id=${skill.id}')">
                 <div class="skill-name">${escapeHtml(skill.name)}</div>
@@ -197,6 +263,14 @@
                 ${skill.description
                 ? `<div class="skill-description">${escapeHtml(skill.description)}</div>`
                 : ''}
+                ${skill.skillToTeach ? `
+                <div style="font-size:0.75rem; margin:4px 0; color:var(--text-light);">
+                    📖 Teaches: <strong style="color:var(--text)">${escapeHtml(skill.skillToTeach)}</strong>
+                </div>` : ''}
+                ${skill.skillToLearn ? `
+                <div style="font-size:0.75rem; margin:4px 0; color:var(--text-light);">
+                    📚 Wants to learn: <strong style="color:var(--text)">${escapeHtml(skill.skillToLearn)}</strong>
+                </div>` : ''}
                 <div class="user-row">
                     <div class="user-info">
                         <div class="user-avatar">${(username.charAt(0) || "U").toUpperCase()}</div>
@@ -215,8 +289,11 @@
                 <div class="card-footer">
                     <div class="popularity">🔥 ${skill.popularity || 0}</div>
                     <div class="action-group">
-                        <button class="action-btn"
-                            onclick="event.stopPropagation(); increasePopularity(${skill.id})">❤️</button>
+                        <button class="action-btn" title="${isLiked ? 'Already liked' : 'Like'}"
+                            onclick="event.stopPropagation(); increasePopularity(${skill.id})"
+                            style="${isLiked ? 'opacity:0.4; cursor:not-allowed;' : ''}">
+                            ${isLiked ? '❤️' : '🤍'}
+                        </button>
                         ${isOwner ? `
                         <button class="action-btn"
                             onclick="event.stopPropagation(); editSkill(${skill.id})">✏️</button>
@@ -239,10 +316,12 @@
         if (!nameInput.value.trim()) { alert("Enter skill name"); return; }
 
         const skill = {
-            name:        nameInput.value.trim(),
-            category:    categoryValue,
-            description: desc.value.trim(),
-            type:        type.value
+            name:         nameInput.value.trim(),
+            category:     categoryValue,
+            description:  desc.value.trim(),
+            type:         type.value,
+            skillToTeach: document.getElementById("skillToTeach").value.trim(),
+            skillToLearn: document.getElementById("skillToLearn").value.trim()
         };
 
         const btn = document.getElementById("addBtn");
@@ -290,19 +369,26 @@
 
     function editSkill(id) {
         if (!getCurrentUser()) { location.href = "login.html"; return; }
-        const skill = allSkills.find(s => s.id === id);
-        if (!skill) return;
+        // id comes as string from onclick attribute — parse it
+        const skill = allSkills.find(s => s.id === parseInt(id));
+        if (!skill) { alert("Skill not found"); return; }
 
         nameInput.value = skill.name;
         cat.value       = skill.category || "";
         desc.value      = skill.description || "";
         type.value      = skill.type || "teach";
+        document.getElementById("skillToTeach").value = skill.skillToTeach || "";
+        document.getElementById("skillToLearn").value = skill.skillToLearn || "";
 
-        if (cat.value === "Other") {
+        if (skill.category === "Other" || !["Programming","Design","Business","Language","Fitness",""].includes(skill.category)) {
+            cat.value = "Other";
             otherCategory.style.display = "block";
             otherCategory.value = skill.category || "";
+        } else {
+            otherCategory.style.display = "none";
         }
-        editingId = id;
+
+        editingId = parseInt(id);
         modal.style.display = "flex";
     }
 
@@ -312,13 +398,29 @@
             location.href = "login.html";
             return;
         }
+
+        // ── Per-account like tracking ──
+        const userId      = localStorage.getItem("userId");
+        const storageKey  = `likedSkills_${userId}`;
+        const likedSkills = JSON.parse(localStorage.getItem(storageKey) || "[]");
+
+        if (likedSkills.includes(id)) {
+            alert("You already liked this skill! ❤️");
+            return;
+        }
+
         try {
             const res = await fetch(`${API}/api/skills/${id}/increase`, {
                 method: "PUT",
                 headers: authHeaders()
             });
             if (handleUnauthorized(res)) return;
-            if (res.ok) await loadSkills();
+            if (res.ok) {
+                // Save liked skill per user account
+                likedSkills.push(id);
+                localStorage.setItem(storageKey, JSON.stringify(likedSkills));
+                await loadSkills();
+            }
         } catch (e) {
             console.error("Like failed", e);
         }
@@ -343,6 +445,8 @@
         type.value          = "teach";
         otherCategory.value = "";
         otherCategory.style.display = "none";
+        document.getElementById("skillToTeach").value = "";
+        document.getElementById("skillToLearn").value = "";
     }
 
     function toggleFilters() {
@@ -379,26 +483,97 @@
         location.href = "login.html";
     }
 
+    // ── MOBILE NAV ──
+    function toggleMobileNav() {
+        document.getElementById("mobileNav").classList.toggle("open");
+    }
+    function closeMobileNav() {
+        document.getElementById("mobileNav").classList.remove("open");
+    }
+    // Close mobile nav when clicking outside
+    document.addEventListener('click', function(e) {
+        const nav = document.getElementById("mobileNav");
+        const hamburger = document.querySelector(".hamburger");
+        if (nav.classList.contains("open") && !nav.contains(e.target) && !hamburger.contains(e.target)) {
+            closeMobileNav();
+        }
+    });
+
+    // ── LIVE COIN BALANCE ──
+    async function loadCoinBalance() {
+        if (!getToken()) return;
+        try {
+            const res = await fetch(`${API}/api/coins/balance`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                const bal  = data.balance ?? 0;
+                document.getElementById("navCoinCount").textContent = bal;
+                const mc = document.getElementById("mobileCoins");
+                if (mc) mc.textContent = "🪙 " + bal;
+            }
+        } catch(e) {
+            document.getElementById("navCoinCount").textContent = "0";
+        }
+    }
+
+    // ── UNREAD CHAT COUNT ──
+    async function loadUnreadCount() {
+        if (!getToken()) return;
+        try {
+            const res = await fetch(`${API}/api/messages/unread/count`, { headers: authHeaders() });
+            if (res.ok) {
+                const data  = await res.json();
+                const count = data.count ?? 0;
+                // Top navbar badge
+                const badge = document.getElementById("chatBadge");
+                // Bottom nav badge
+                const bottomBadge = document.getElementById("bottomChatBadge");
+                if (count > 0) {
+                    const label = count > 99 ? "99+" : count;
+                    if (badge) { badge.textContent = label; badge.style.display = "flex"; }
+                    if (bottomBadge) { bottomBadge.textContent = label; bottomBadge.style.display = "flex"; }
+                } else {
+                    if (badge) badge.style.display = "none";
+                    if (bottomBadge) bottomBadge.style.display = "none";
+                }
+            }
+        } catch(e) { /* ignore if endpoint not ready */ }
+    }
+
     search.oninput      = updateDisplay;
     catFilter.onchange  = updateDisplay;
     sortFilter.onchange = updateDisplay;
 
     loadSkills();
     loadUser();
-    async function loadNavCoins() {
-        const t = localStorage.getItem("token");
-        if (!t) return;
-        try {
-            const res = await fetch(`${API}/api/coins/balance`, {
-                headers: { "Authorization": `Bearer ${t}` }
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            const el = document.getElementById("navCoinCount");
-            if (el) el.textContent = data.balance;
-        } catch(e) {}
+    loadCoinBalance();
+    loadUnreadCount();
+    setInterval(loadUnreadCount, 15000);
+
+    // ── VIEW TOGGLE (desktop ↔ mobile simulation) ──
+    const viewBtn = document.getElementById("viewToggleBtn");
+    function applyViewMode() {
+        const isMobile = localStorage.getItem("viewMode") === "mobile";
+        if (isMobile) {
+            document.body.classList.add("mobile-view");
+            viewBtn.textContent = "🖥️";
+            viewBtn.setAttribute("data-tip", "Desktop view");
+        } else {
+            document.body.classList.remove("mobile-view");
+            viewBtn.textContent = "📱";
+            viewBtn.setAttribute("data-tip", "Mobile view");
+        }
     }
-    loadNavCoins();
+    function toggleView() {
+        const isMobile = localStorage.getItem("viewMode") === "mobile";
+        localStorage.setItem("viewMode", isMobile ? "desktop" : "mobile");
+        applyViewMode();
+    }
+    applyViewMode();
 </script>
+
+<!-- View toggle floating button -->
+<button class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()" data-tip="Mobile view">📱</button>
+
 </body>
 </html>

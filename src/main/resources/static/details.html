@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <title>Skill Details</title>
     <link rel="stylesheet" href="style.css">
-
     <style>
         .details-container {
-            max-width: 850px;
-            margin: 60px auto;
+            max-width: 750px;
+            margin: 40px auto;
             padding: 20px;
         }
 
@@ -25,6 +24,7 @@
         .details-card h2 {
             margin-bottom: 12px;
             font-size: 1.6rem;
+            color: var(--text);
         }
 
         .meta {
@@ -43,17 +43,8 @@
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+            color: var(--text);
         }
-
-        .type-badge {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: white;
-        }
-
-
 
         .description {
             margin: 14px 0;
@@ -61,15 +52,40 @@
             line-height: 1.7;
         }
 
+        .swap-info {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 14px 0;
+        }
+
+        .swap-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            color: var(--text);
+        }
+
+        .swap-pill span { color: var(--text-light); }
+
         .popularity {
             margin-top: 10px;
             font-size: 0.9rem;
+            color: var(--text);
         }
 
         .actions {
             margin-top: 22px;
             display: flex;
             justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .like-btn {
@@ -81,13 +97,29 @@
             color: white;
             background: linear-gradient(135deg, #ff4d6d, #ff758f);
             transition: 0.2s;
-            position: relative;
+            font-size: 0.9rem;
+        }
+        .like-btn:hover:not(:disabled) { transform: scale(0.97); opacity: 0.9; }
+        .like-btn:disabled {
+            background: var(--border);
+            color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .like-btn:hover {
-            transform: scale(0.95);
-            opacity: 0.9;
+        .chat-btn {
+            padding: 10px 28px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            transition: 0.2s;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 14px rgba(108,99,255,0.3);
         }
+        .chat-btn:hover { transform: scale(0.97); opacity: 0.9; }
 
         .user-info-detail {
             display: flex;
@@ -96,24 +128,33 @@
             margin-top: 28px;
             padding-top: 20px;
             border-top: 1px solid var(--border);
+            text-align: left;
         }
 
         .detail-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            flex-shrink: 0;
         }
 
         .online-status {
             font-size: 0.8rem;
             color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        .user-name-detail {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
         }
     </style>
 </head>
@@ -121,40 +162,32 @@
 
 <nav class="navbar">
     <h2 onclick="navigate('index.html')">🔄 SkillSwap</h2>
-
     <div class="nav-right">
-        <a href="index.html" style="text-decoration:none" title="Home">
-            <button>🏠</button>
-        </a>
-
-        <button onclick="navigate('profile.html')">Profile</button>
-
+        <button onclick="navigate('index.html')">🏠</button>
+        <button onclick="navigate('profile.html')">👤 Profile</button>
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
     </div>
 </nav>
 
 <div class="details-container">
-    <div class="details-card" id="details">Loading...</div>
+    <div class="details-card" id="details">
+        <p style="color:var(--text-light);">Loading...</p>
+    </div>
 </div>
 
 <footer>
-    <p>
-        © 2026 SkillSwap — Learn & Teach Skills Easily 🚀 |
-        <a href="about.html">About</a> |
-        <a href="contact.html">Contact</a>
-    </p>
+    <p>© 2026 SkillSwap — Learn & Teach Skills Easily 🚀</p>
 </footer>
 
 <script>
     const API = "http://localhost:8080";
-
+    const currentUserId = localStorage.getItem("userId");
 
     function navigate(url) {
         sessionStorage.setItem('navigating', 'true');
         location.href = url;
     }
 
-    // ── Dark mode ──
     const modeBtn = document.getElementById("modeBtn");
     if (localStorage.getItem("mode") === "dark") {
         document.body.classList.add("dark");
@@ -179,12 +212,21 @@
 
     function authHeaders() {
         const token = localStorage.getItem("token");
-        return {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        };
+        return { "Content-Type": "application/json", "Authorization": `Bearer ${token}` };
     }
 
+    // ── Like helpers ──
+    function isAlreadyLiked(skillId) {
+        const liked = JSON.parse(localStorage.getItem(`likedSkills_${localStorage.getItem("userId")}`) || "[]");
+        return liked.includes(skillId);
+    }
+    function markAsLiked(skillId) {
+        const liked = JSON.parse(localStorage.getItem(`likedSkills_${localStorage.getItem("userId")}`) || "[]");
+        if (!liked.includes(skillId)) {
+            liked.push(skillId);
+            localStorage.setItem(`likedSkills_${localStorage.getItem("userId")}`, JSON.stringify(liked));
+        }
+    }
 
     const container = document.getElementById("details");
 
@@ -197,36 +239,66 @@
                 return res.json();
             })
             .then(skill => {
-                const user = skill.user || {};
+                const user         = skill.user || {};
+                const isOwn        = String(user.id) === String(currentUserId);
+                const alreadyLiked = isAlreadyLiked(skill.id);
 
-                // ── FIX 8: Only ONE like button here, no duplicate ──
                 container.innerHTML = `
                     <h2>${escapeHtml(skill.name)}</h2>
+
                     <div class="meta">
-                        <span class="category">${escapeHtml(skill.category)}</span>
+                        <span class="category">#${escapeHtml(skill.category || 'General')}</span>
                         <span class="type-badge ${skill.type === 'teach' ? 'type-teach' : 'type-learn'}">
-                            ${skill.type === 'teach' ? 'TEACH' : 'LEARN'}
+                            ${skill.type === 'teach' ? '📖 TEACH' : '📚 LEARN'}
                         </span>
                     </div>
 
-                    <p class="description">
-                        ${escapeHtml(skill.description || "No description provided.")}
-                    </p>
+                    ${skill.description
+                    ? `<p class="description">${escapeHtml(skill.description)}</p>`
+                    : ''}
+
+                    <!-- ✅ Teach / Learn swap pills -->
+                    ${(skill.skillToTeach || skill.skillToLearn) ? `
+                    <div class="swap-info">
+                        ${skill.skillToTeach ? `
+                        <div class="swap-pill">
+                            📖 <span>Teaches:</span> <strong>${escapeHtml(skill.skillToTeach)}</strong>
+                        </div>` : ''}
+                        ${skill.skillToLearn ? `
+                        <div class="swap-pill">
+                            📚 <span>Wants to learn:</span> <strong>${escapeHtml(skill.skillToLearn)}</strong>
+                        </div>` : ''}
+                    </div>` : ''}
 
                     <div class="popularity">
                         🔥 Popularity: <span id="popCount">${skill.popularity || 0}</span>
                     </div>
 
-                  <div class="actions">
-    <button class="like-btn" onclick="likeSkill(${skill.id})">❤️ Like </button>
-                </div>
+                    <div class="actions">
+                        <!-- ✅ Like — disabled if already liked or own skill -->
+                        <button
+                            class="like-btn"
+                            id="likeBtn"
+                            onclick="likeSkill(${skill.id})"
+                            ${alreadyLiked || isOwn ? 'disabled' : ''}>
+                            ${alreadyLiked ? '❤️ Liked' : isOwn ? '❤️ Your skill' : '🤍 Like'}
+                        </button>
+
+                        <!-- ✅ Chat — only if NOT own skill and user has an id -->
+                        ${!isOwn && user.id ? `
+                        <button
+                            class="chat-btn"
+                            onclick="navigate('chat.html?userId=${user.id}&username=${encodeURIComponent(user.username || 'User')}')">
+                            💬 Chat with ${escapeHtml(user.username || 'User')}
+                        </button>` : ''}
+                    </div>
 
                     <div class="user-info-detail">
                         <div class="detail-avatar">
-                            ${(user.username?.charAt(0) || "U").toUpperCase()}
+                            ${(user.username?.charAt(0) || 'U').toUpperCase()}
                         </div>
                         <div>
-                            <div><b>${escapeHtml(user.username || "Unknown")}</b></div>
+                            <div class="user-name-detail">${escapeHtml(user.username || 'Unknown')}</div>
                             <div class="online-status">
                                 ${user.online ? '🟢 Online' : '⚫ Offline'}
                             </div>
@@ -241,11 +313,9 @@
 
     async function likeSkill(skillId) {
         const token = localStorage.getItem("token");
-        if (!token) {
-            alert("Please login to like!");
-            navigate('login.html');
-            return;
-        }
+        if (!token) { alert("Please login to like!"); navigate('login.html'); return; }
+        if (isAlreadyLiked(skillId)) { alert("You already liked this! ❤️"); return; }
+
         try {
             const res = await fetch(`${API}/api/skills/${skillId}/increase`, {
                 method: "PUT",
@@ -253,17 +323,19 @@
             });
             if (res.ok) {
                 const updated = await res.json();
-                const popEl = document.getElementById("popCount");
-                if (popEl) popEl.textContent = updated.popularity || 0;
+                document.getElementById("popCount").textContent = updated.popularity || 0;
+                markAsLiked(skillId);
+                const btn = document.getElementById("likeBtn");
+                btn.textContent = "❤️ Liked";
+                btn.disabled    = true;
             }
         } catch (e) {
             console.error("Like failed", e);
         }
     }
 
-    // ── Cleanup ──
     window.addEventListener('beforeunload', () => {
-        const userId    = localStorage.getItem('userId');
+        const userId     = localStorage.getItem('userId');
         const navigating = sessionStorage.getItem('navigating');
         if (userId && !navigating) {
             navigator.sendBeacon(`${API}/presence/offline/${userId}`);
@@ -271,6 +343,5 @@
         sessionStorage.removeItem('navigating');
     });
 </script>
-<script src="main.js"></script>
 </body>
 </html>
