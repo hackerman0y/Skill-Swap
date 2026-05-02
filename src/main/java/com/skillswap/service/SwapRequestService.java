@@ -61,11 +61,20 @@ public class SwapRequestService {
 
     public SwapResponseDTO acceptRequest(Long swapId, Long userId) {
         SwapRequest swap = getSwapOrThrow(swapId);
+
         if (!swap.getReceiver().getId().equals(userId))
             throw new UnauthorizedException("Only the receiver can accept this request.");
+
         if (swap.getStatus() != SwapStatus.PENDING)
             throw new IllegalStateException("Only pending requests can be accepted.");
+
         swap.setStatus(SwapStatus.ACCEPTED);
+
+        // We pull the person directly from the swap object here
+        // Note: If 'getUsername' is red, try 'getName'
+        System.out.println("DEBUG: Skill Swap Successful!");
+        System.out.println("DEBUG: Receiver: " + swap.getReceiver().getUsername());
+
         return toDTO(swapRequestRepository.save(swap));
     }
 
