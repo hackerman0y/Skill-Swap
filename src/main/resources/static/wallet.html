@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillSwap - Wallet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- NAVBAR (same as rest of project) -->
+<nav class="navbar">
+    <h2 class="logo" onclick="navigate('index.html')">
+        <span>🔄</span> SkillSwap
+    </h2>
+</nav>
+
+<div class="center">
+
+    <div class="login-card">
+
+        <h2>💰 My Wallet</h2>
+
+        <!-- BALANCE -->
+        <div class="form-group">
+            <label>Balance</label>
+            <div id="balance" style="font-size: 26px; font-weight: bold;">
+                Loading...
+            </div>
+            <button class="btn-main" onclick="loadBalance()">Refresh</button>
+        </div>
+
+        <!-- TRANSACTIONS -->
+        <div class="form-group">
+            <label>Transactions</label>
+            <ul id="transactions" style="list-style: none; padding: 0;"></ul>
+            <button class="btn-main" onclick="loadTransactions()">Reload</button>
+        </div>
+
+        <!-- ERROR -->
+        <div id="error" class="error-msg"></div>
+
+        <div class="divider">—</div>
+
+        <button class="btn-back" onclick="navigate('index.html')">
+            Back to Home
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+    function navigate(url) {
+        location.href = url;
+    }
+
+    function authHeaders() {
+        const token = localStorage.getItem("token");
+
+        return {
+            "Authorization": token ? "Bearer " + token : "",
+            "Content-Type": "application/json"
+        };
+    }
+
+    function loadBalance() {
+        fetch("/api/coins/balance", {
+            headers: authHeaders()
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Unauthorized");
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById("balance").innerText = data.balance;
+            })
+            .catch(() => {
+                document.getElementById("balance").innerText = "0";
+                document.getElementById("error").innerText = "❌ Please login first";
+            });
+    }
+
+    function loadTransactions() {
+        fetch("/api/coins/transactions", {
+            headers: authHeaders()
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Unauthorized");
+                return res.json();
+            })
+            .then(data => {
+                const list = document.getElementById("transactions");
+                list.innerHTML = "";
+
+                data.forEach(tx => {
+                    const li = document.createElement("li");
+                    li.style.padding = "10px";
+                    li.style.borderBottom = "1px solid #eee";
+                    li.innerText = `${tx.amount} coins - ${tx.reason}`;
+                    list.appendChild(li);
+                });
+            })
+            .catch(() => {
+                document.getElementById("transactions").innerHTML =
+                    "<li>❌ Please login first</li>";
+            });
+    }
+
+    // AUTO LOAD
+    loadBalance();
+    loadTransactions();
+</script>
+
+</body>
+</html>
