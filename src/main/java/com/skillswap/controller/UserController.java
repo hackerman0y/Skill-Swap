@@ -49,41 +49,36 @@ public class UserController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout() {
         SecurityContextHolder.clearContext();
-        // Return a confirmation response after clearing the security context
         return ResponseEntity.ok("Logged out successfully");
     }
 
     // ─── User / Profile ──────────────────────────────────────────────────────
 
-
+    // ── FIX 5: Return real user data instead of hardcoded fake data ──
     @GetMapping("/{id}")
-    public Map<String, Object> getUser(@PathVariable Long id) {
-        Map<String, Object> user = new HashMap<>();
-        user.put("id", id);
-        user.put("name", "Hala");
-        user.put("email", "hala@gmail.com");
+    public ResponseEntity<User> getUser(@PathVariable Long id) {
+        try {
+            User user = userService.getUser(id);  // ✅ was getAllUser(id)
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
-        List<Map<String, String>> skills = new ArrayList<>();
-
-        Map<String, String> s1 = new HashMap<>();
-        s1.put("name", "Java");
-        s1.put("type", "teach");
-
-        Map<String, String> s2 = new HashMap<>();
-        s2.put("name", "Design");
-        s2.put("type", "learn");
-
-        skills.add(s1);
-        skills.add(s2);
-
-        user.put("skills", skills);
-
-        return user;
+    // ── FIX 7: Get all users (used by chat-list.html) ──
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.ok(List.of());
+        }
     }
 
     @GetMapping("/profile/{id}")
     public User getProfile(@PathVariable Long id) {
-        return userService.getUser(id);
+        return userService.getUser(id);  // ✅ was getAllUser(id)
     }
 
     @GetMapping("/me")

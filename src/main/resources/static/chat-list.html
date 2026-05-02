@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkillSwap - Messages</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; }
+
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 24px; background: var(--card);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 12px rgba(108,99,255,0.07);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .navbar h2 { color: var(--primary); font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+        .nav-right  { display: flex; gap: 8px; align-items: center; }
+        .nav-icon-btn {
+            background: transparent; border: none; width: 38px; height: 38px;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; cursor: pointer; color: var(--text-light); transition: all 0.15s;
+        }
+        .nav-icon-btn:hover { background: var(--bg); color: var(--primary); }
+        .mode-btn {
+            background: transparent; border: 1.5px solid var(--border);
+            color: var(--text-light); padding: 6px 10px; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .mode-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        .page-wrapper { max-width: 100%; margin: 0; padding: 0 0 40px; }
+
+        .messages-header {
+            padding: 28px 24px 16px; background: var(--card);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 65px; z-index: 9;
+        }
+        .messages-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .messages-title { font-size: 1.4rem; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+        .messages-count {
+            font-size: 0.75rem; color: var(--text-light); background: var(--bg);
+            padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); font-weight: 500;
+        }
+
+        .search-wrapper { position: relative; }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 0.9rem; pointer-events: none; }
+        .search-bar {
+            width: 100%; padding: 10px 16px 10px 40px;
+            border: 1.5px solid var(--border); border-radius: 12px;
+            background: var(--bg); color: var(--text); font-size: 0.85rem;
+            font-family: inherit; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,99,255,0.1); }
+        .search-bar::placeholder { color: var(--text-light); }
+
+        .chat-list { display: flex; flex-direction: column; }
+        .section-label { padding: 14px 24px 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); }
+
+        .chat-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 24px; cursor: pointer; transition: background 0.15s; position: relative;
+        }
+        .chat-item:hover { background: rgba(108,99,255,0.04); }
+        .chat-item::after { content: ''; position: absolute; bottom: 0; left: 80px; right: 24px; height: 1px; background: var(--border); }
+        .chat-item:last-child::after { display: none; }
+        .chat-item.has-unread { background: rgba(108,99,255,0.035); }
+
+        .chat-avatar {
+            width: 52px; height: 52px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1.15rem;
+            flex-shrink: 0; position: relative; box-shadow: 0 4px 12px rgba(108,99,255,0.25);
+        }
+        .chat-avatar.color-1 { background: linear-gradient(135deg, #6c63ff, #8b5cf6); }
+        .chat-avatar.color-2 { background: linear-gradient(135deg, #10b981, #059669); }
+        .chat-avatar.color-3 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .chat-avatar.color-4 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .chat-avatar.color-5 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+        .online-ring { position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid var(--card); background: #64748b; transition: background 0.3s; }
+        .online-ring.is-online { background: #10b981; }
+
+        .chat-meta { flex: 1; min-width: 0; }
+        .chat-meta-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+        .chat-username { font-weight: 600; font-size: 0.92rem; color: var(--text); }
+        .chat-username.bold { font-weight: 800; }
+        .chat-time { font-size: 0.7rem; color: var(--text-light); font-weight: 500; white-space: nowrap; }
+
+        .chat-preview {
+            font-size: 0.8rem; color: var(--text-light);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .chat-preview.unread-text { color: var(--text); font-weight: 600; }
+
+        .online-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; color: #10b981; font-weight: 600; }
+        .online-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block; animation: pulse-green 2s infinite; }
+        @keyframes pulse-green { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .chat-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+        .chat-arrow { color: var(--border); font-size: 0.9rem; transition: color 0.15s, transform 0.15s; }
+        .chat-item:hover .chat-arrow { color: var(--primary); transform: translateX(3px); }
+
+        .unread-badge {
+            background: var(--primary); color: white; border-radius: 20px;
+            font-size: 0.65rem; font-weight: 700; min-width: 20px; height: 20px;
+            padding: 0 6px; display: flex; align-items: center; justify-content: center;
+        }
+
+        .empty-chat { text-align: center; padding: 80px 20px; color: var(--text-light); }
+        .empty-chat .empty-icon { width: 72px; height: 72px; border-radius: 24px; background: rgba(108,99,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 16px; }
+        .empty-chat h4 { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .empty-chat p { font-size: 0.85rem; }
+
+        .skeleton-item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; }
+        .skeleton-avatar { width: 52px; height: 52px; border-radius: 16px; background: var(--border); flex-shrink: 0; animation: shimmer 1.4s infinite; }
+        .skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .skeleton-line { height: 12px; border-radius: 6px; background: var(--border); animation: shimmer 1.4s infinite; }
+        .skeleton-line.short { width: 55%; }
+        @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .online-strip { padding: 16px 24px 0; display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; }
+        .online-strip::-webkit-scrollbar { display: none; }
+        .online-user-bubble { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; flex-shrink: 0; }
+        .online-bubble-avatar { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem; border: 2.5px solid #10b981; box-shadow: 0 0 0 1px rgba(16,185,129,0.3); }
+        .online-bubble-name { font-size: 0.68rem; color: var(--text-light); font-weight: 500; max-width: 48px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2 class="logo" onclick="navigate('index.html')">
+        <span>🔄</span> SkillSwap
+    </h2>
+    <div class="nav-right">
+        <button class="nav-icon-btn" onclick="navigate('index.html')" title="Home">🏠</button>
+        <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
+    </div>
+</div>
+
+<div class="page-wrapper">
+    <div class="messages-header">
+        <div class="messages-header-top">
+            <div class="messages-title">💬 Messages</div>
+            <span class="messages-count" id="userCount">Loading...</span>
+        </div>
+        <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input class="search-bar" id="searchBar" type="text" placeholder="Search people..." oninput="filterUsers()"/>
+        </div>
+    </div>
+
+    <div class="online-strip" id="onlineStrip" style="display:none;"></div>
+
+    <div class="chat-list" id="chatListContainer">
+        <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
+        <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
+        <div class="skeleton-item"><div class="skeleton-avatar"></div><div class="skeleton-lines"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
+    </div>
+</div>
+
+<script>
+    const API = "http://localhost:8080";
+    const token = localStorage.getItem("token");
+    const currentUserId = localStorage.getItem("userId");
+    const currentUsername = localStorage.getItem("username");
+
+    if (!token) { location.href = "login.html"; }
+
+    function navigate(url) { sessionStorage.setItem('navigating', 'true'); location.href = url; }
+
+    const modeBtn = document.getElementById("modeBtn");
+    if (localStorage.getItem("mode") === "dark") { document.body.classList.add("dark"); modeBtn.innerText = "☀️"; }
+    function toggleMode() {
+        document.body.classList.toggle("dark");
+        const dark = document.body.classList.contains("dark");
+        localStorage.setItem("mode", dark ? "dark" : "light");
+        modeBtn.innerText = dark ? "☀️" : "🌙";
+    }
+
+    function authHeaders() { return { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }; }
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+    function timeAgo(iso) {
+        if (!iso) return '';
+        const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+        if (diff < 60)    return 'now';
+        if (diff < 3600)  return Math.floor(diff / 60) + 'm';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+        return new Date(iso).toLocaleDateString();
+    }
+
+    const avatarColors = ['color-1','color-2','color-3','color-4','color-5'];
+    function avatarColor(username) {
+        let hash = 0;
+        for (let c of (username || '')) hash += c.charCodeAt(0);
+        return avatarColors[hash % avatarColors.length];
+    }
+
+    let allUsers = [];
+    let conversationData = {}; // userId → { lastMessage, unreadCount }
+
+    async function loadConversationPreviews() {
+        const promises = allUsers.map(async user => {
+            try {
+                const res = await fetch(`${API}/api/messages/${user.id}`, { headers: authHeaders() });
+                if (res.ok) {
+                    const msgs = await res.json();
+                    if (msgs && msgs.length) {
+                        const last   = msgs[msgs.length - 1];
+                        const unread = msgs.filter(m =>
+                            m.sender === user.username && m.isRead === false
+                        ).length;
+                        conversationData[user.id] = { lastMessage: last, unreadCount: unread };
+                    }
+                }
+            } catch(e) {}
+        });
+        await Promise.all(promises);
+    }
+
+    function renderUsers(users) {
+        const container = document.getElementById("chatListContainer");
+        const count     = document.getElementById("userCount");
+
+        if (!users.length) {
+            count.textContent = '0 people';
+            container.innerHTML = `<div class="empty-chat"><div class="empty-icon">💬</div><h4>No one here yet</h4><p>Invite a friend to start swapping skills!</p></div>`;
+            return;
+        }
+
+        count.textContent = `${users.length} ${users.length === 1 ? 'person' : 'people'}`;
+
+        // Sort by: unread first → last message time → online
+        const sorted = [...users].sort((a, b) => {
+            const aData   = conversationData[a.id];
+            const bData   = conversationData[b.id];
+            const aUnread = aData?.unreadCount || 0;
+            const bUnread = bData?.unreadCount || 0;
+            if (aUnread !== bUnread) return bUnread - aUnread;
+            const aTime = aData?.lastMessage?.timestamp ? new Date(aData.lastMessage.timestamp).getTime() : 0;
+            const bTime = bData?.lastMessage?.timestamp ? new Date(bData.lastMessage.timestamp).getTime() : 0;
+            if (aTime !== bTime) return bTime - aTime;
+            return (b.online ? 1 : 0) - (a.online ? 1 : 0);
+        });
+
+        // Online strip
+        const onlineUsers = sorted.filter(u => u.online);
+        const strip = document.getElementById("onlineStrip");
+        if (onlineUsers.length) {
+            strip.style.display = 'flex';
+            strip.innerHTML = onlineUsers.map(u => `
+                <div class="online-user-bubble" onclick="navigate('chat.html?userId=${u.id}&username=${encodeURIComponent(u.username)}')">
+                    <div class="online-bubble-avatar ${avatarColor(u.username)}">${escapeHtml((u.username?.charAt(0)||'U').toUpperCase())}</div>
+                    <span class="online-bubble-name">${escapeHtml(u.username)}</span>
+                </div>`).join('');
+        } else {
+            strip.style.display = 'none';
+        }
+
+        container.innerHTML = sorted.map(u => renderChatItem(u)).join('');
+    }
+
+    function renderChatItem(user) {
+        const initial   = (user.username?.charAt(0) || 'U').toUpperCase();
+        const color     = avatarColor(user.username);
+        const data      = conversationData[user.id];
+        const lastMsg   = data?.lastMessage;
+        const unread    = data?.unreadCount || 0;
+        const hasUnread = unread > 0;
+
+        let previewText = '';
+        let timeStr     = '';
+
+        if (lastMsg) {
+            const isMine = lastMsg.sender === currentUsername;
+            const text   = lastMsg.content || lastMsg.text || '';
+            previewText  = (isMine ? '✓ You: ' : '') + (text.length > 38 ? text.slice(0, 38) + '…' : text);
+            timeStr      = timeAgo(lastMsg.timestamp);
+        }
+
+        return `
+        <div class="chat-item ${hasUnread ? 'has-unread' : ''}"
+             onclick="navigate('chat.html?userId=${user.id}&username=${encodeURIComponent(user.username)}')">
+            <div class="chat-avatar ${color}">
+                ${escapeHtml(initial)}
+                <div class="online-ring ${user.online ? 'is-online' : ''}"></div>
+            </div>
+            <div class="chat-meta">
+                <div class="chat-meta-top">
+                    <span class="chat-username ${hasUnread ? 'bold' : ''}">${escapeHtml(user.username)}</span>
+                    <span class="chat-time">${timeStr}</span>
+                </div>
+                <div class="chat-preview ${hasUnread ? 'unread-text' : ''}">
+                    ${previewText
+            ? escapeHtml(previewText)
+            : user.online
+                ? `<span class="online-pill">Active now</span>`
+                : `Tap to start chatting`
+        }
+                </div>
+            </div>
+            <div class="chat-right">
+                ${hasUnread
+            ? `<span class="unread-badge">${unread > 99 ? '99+' : unread}</span>`
+            : `<span class="chat-arrow">›</span>`
+        }
+            </div>
+        </div>`;
+    }
+
+    function filterUsers() {
+        const q = document.getElementById("searchBar").value.toLowerCase();
+        const filtered = q ? allUsers.filter(u => u.username?.toLowerCase().includes(q)) : allUsers;
+        renderUsers(filtered);
+    }
+
+    async function loadChatList() {
+        try {
+            const res = await fetch(`${API}/api/users`, { headers: authHeaders() });
+            if (res.status === 401 || res.status === 403) { navigate('login.html'); return; }
+            if (!res.ok) throw new Error();
+            const users = await res.json();
+            allUsers = users.filter(u => String(u.id) !== String(currentUserId));
+            await loadConversationPreviews();
+            renderUsers(allUsers);
+        } catch (e) {
+            document.getElementById("chatListContainer").innerHTML = `
+                <div class="empty-chat"><div class="empty-icon">⚠️</div><h4>Could not load</h4><p>Is the server running on port 8080?</p></div>`;
+        }
+    }
+
+    window.addEventListener('beforeunload', () => {
+        const navigating = sessionStorage.getItem('navigating');
+        if (currentUserId && !navigating) navigator.sendBeacon(`${API}/presence/offline/${currentUserId}`);
+        sessionStorage.removeItem('navigating');
+    });
+
+    loadChatList();
+    setInterval(loadChatList, 30000);
+</script>
+</body>
+</html>
