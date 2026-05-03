@@ -19,7 +19,9 @@ public class SwapRequestService {
     private final SwapRequestRepository swapRequestRepository;
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
+    private final NotificationService notificationService; // ── NEW ──
 
+    // ── Send swap request → notify receiver ──
     public SwapResponseDTO sendSwapRequest(SwapRequestDTO dto, Long senderId) {
         if (senderId.equals(dto.getReceiverId()))
             throw new IllegalStateException("You cannot send a swap request to yourself.");
@@ -46,7 +48,19 @@ public class SwapRequestService {
                 .status(SwapStatus.PENDING)
                 .build();
 
-        return toDTO(swapRequestRepository.save(swapRequest));
+        SwapRequest saved = swapRequestRepository.save(swapRequest);
+
+        // ── Notify receiver: someone wants to swap with them ──
+        notificationService.createNotification(
+                receiver.getId(),
+                "swap_request",
+                "New Swap Request",
+                sender.getUsername() + " wants to swap \"" + offeredSkill.getName()
+                        + "\" for your \"" + wantedSkill.getName() + "\"",
+                saved.getId()
+        );
+
+        return toDTO(saved);
     }
 
     public List<SwapResponseDTO> getIncomingRequests(Long userId) {
@@ -59,41 +73,65 @@ public class SwapRequestService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    // ── Accept swap → notify sender ──
     public SwapResponseDTO acceptRequest(Long swapId, Long userId) {
         SwapRequest swap = getSwapOrThrow(swapId);
 
         if (!swap.getReceiver().getId().equals(userId))
             throw new UnauthorizedException("Only the receiver can accept this request.");
-
         if (swap.getStatus() != SwapStatus.PENDING)
             throw new IllegalStateException("Only pending requests can be accepted.");
 
         swap.setStatus(SwapStatus.ACCEPTED);
+        SwapRequest saved = swapRequestRepository.save(swap);
 
-        // We pull the person directly from the swap object here
-        // Note: If 'getUsername' is red, try 'getName'
-        System.out.println("DEBUG: Skill Swap Successful!");
-        System.out.println("DEBUG: Receiver: " + swap.getReceiver().getUsername());
+        // ── Notify sender: their request was accepted ──
+        notificationService.createNotification(
+                swap.getSender().getId(),
+                "swap_accepted",
+                "Swap Request Accepted! 🎉",
+                swap.getReceiver().getUsername() + " accepted your swap request for \""
+                        + swap.getWantedSkill().getName() + "\". Schedule a session now!",
+                saved.getId()
+        );
 
-        return toDTO(swapRequestRepository.save(swap));
+        return toDTO(saved);
     }
 
+    // ── Reject swap → notify sender ──
     public SwapResponseDTO rejectRequest(Long swapId, Long userId) {
         SwapRequest swap = getSwapOrThrow(swapId);
+
         if (!swap.getReceiver().getId().equals(userId))
             throw new UnauthorizedException("Only the receiver can reject this request.");
         if (swap.getStatus() != SwapStatus.PENDING)
             throw new IllegalStateException("Only pending requests can be rejected.");
+
         swap.setStatus(SwapStatus.REJECTED);
-        return toDTO(swapRequestRepository.save(swap));
+        SwapRequest saved = swapRequestRepository.save(swap);
+
+        // ── Notify sender: their request was rejected ──
+        notificationService.createNotification(
+                swap.getSender().getId(),
+                "swap_rejected",
+                "Swap Request Rejected",
+                swap.getReceiver().getUsername() + " declined your swap request for \""
+                        + swap.getWantedSkill().getName() + "\".",
+                saved.getId()
+        );
+
+        return toDTO(saved);
     }
 
+    // ── Cancel swap — no notification needed ──
     public SwapResponseDTO cancelRequest(Long swapId, Long userId) {
         SwapRequest swap = getSwapOrThrow(swapId);
+
         if (!swap.getSender().getId().equals(userId))
             throw new UnauthorizedException("Only the sender can cancel this request.");
         if (swap.getStatus() != SwapStatus.PENDING)
             throw new IllegalStateException("Only pending requests can be cancelled.");
+
         swap.setStatus(SwapStatus.CANCELLED);
         return toDTO(swapRequestRepository.save(swap));
     }

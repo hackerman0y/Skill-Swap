@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap - Sessions</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; }
+
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 24px; background: var(--card);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 1px 12px rgba(108,99,255,0.07);
+        }
+        .navbar h2 { color: var(--primary); font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+        .nav-right { display: flex; gap: 10px; align-items: center; }
+        .nav-icon-btn {
+            background: transparent; border: 1.5px solid var(--border);
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; cursor: pointer; color: var(--text-light); transition: all 0.15s;
+        }
+        .nav-icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .coin-nav-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white; padding: 6px 14px; border-radius: 20px;
+            font-size: 0.82rem; font-weight: 700;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.35); cursor: pointer;
+        }
+        .mode-btn {
+            background: transparent; border: 1.5px solid var(--border);
+            color: var(--text-light); padding: 6px 10px; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .mode-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ── HERO ── */
+        .sessions-hero {
+            background: linear-gradient(135deg, #6c63ff 0%, #8b5cf6 100%);
+            padding: 32px 24px; position: relative; overflow: hidden;
+        }
+        .sessions-hero::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
+        }
+        .hero-inner {
+            max-width: 1100px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 16px; position: relative;
+        }
+        .hero-text h1 { font-size: 1.6rem; font-weight: 800; color: white; margin-bottom: 4px; }
+        .hero-text p  { font-size: 0.88rem; color: rgba(255,255,255,0.8); }
+        .hero-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+        .hero-stat {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 14px; padding: 12px 20px; text-align: center;
+        }
+        .hero-stat .stat-val { font-size: 1.6rem; font-weight: 800; color: white; line-height: 1; }
+        .hero-stat .stat-lbl { font-size: 0.7rem; color: rgba(255,255,255,0.7); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        /* ── CONTENT ── */
+        .page-content { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+        /* ── TABS ── */
+        .session-tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+        .session-tab {
+            padding: 10px 20px; border-radius: 10px 10px 0 0;
+            border: none; background: transparent;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            color: var(--text-light); font-family: inherit;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px; transition: all 0.15s;
+        }
+        .session-tab:hover { color: var(--primary); }
+        .session-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* ── SESSIONS GRID ── */
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        /* ── SESSION CARD ── */
+        .session-card {
+            background: var(--card); border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 20px;
+            position: relative; transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+        .session-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(108,99,255,0.1); }
+        .session-card.in-progress-card { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+        .publisher-tag {
+            position: absolute; top: 16px; right: 16px;
+            background: var(--primary); color: white;
+            font-size: 0.62rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 20px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* ── STATUS BADGE ── */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+        }
+        .status-UPCOMING     { background: #ede9fe; color: #6c63ff; }
+        .status-IN_PROGRESS  { background: #fef3c7; color: #d97706; }
+        .status-COMPLETED    { background: #dcfce7; color: #059669; }
+        .status-CANCELLED    { background: #f1f5f9; color: #64748b; }
+        .dark .status-UPCOMING    { background: #2e1065; color: #a78bfa; }
+        .dark .status-IN_PROGRESS { background: #451a03; color: #fbbf24; }
+        .dark .status-COMPLETED   { background: #052e16; color: #34d399; }
+        .dark .status-CANCELLED   { background: #1e293b; color: #94a3b8; }
+
+        /* ── USERS ── */
+        .session-users {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 0; margin: 10px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .user-chip {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--bg); border-radius: 20px;
+            padding: 5px 12px 5px 5px; font-size: 0.78rem; font-weight: 600;
+        }
+        .user-chip-avatar {
+            width: 24px; height: 24px; border-radius: 8px;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .user-chip-avatar.recv { background: var(--primary-light); }
+
+        /* ── INFO ROWS ── */
+        .session-info { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+        .session-info-row {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.82rem; color: var(--text-light);
+        }
+        .session-info-row strong { color: var(--text); }
+
+        /* ── COIN TAG ── */
+        .coin-earned-tag {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #d97706; padding: 5px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 700; margin-bottom: 12px;
+        }
+        .dark .coin-earned-tag { background: #451a03; color: #fbbf24; }
+
+        /* ── PROGRESS BAR (for IN_PROGRESS) ── */
+        .progress-bar-wrap {
+            background: var(--border); border-radius: 10px;
+            height: 6px; margin-bottom: 14px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 10px;
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            animation: progressPulse 2s ease-in-out infinite;
+        }
+        @keyframes progressPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+        /* ── BUTTONS ── */
+        .start-btn {
+            width: 100%; padding: 12px; border-radius: 14px; border: none;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white; font-size: 0.88rem; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            box-shadow: 0 4px 14px rgba(245,158,11,0.35); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .start-btn:hover { transform: scale(1.02); opacity: 0.92; }
+        .start-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .end-btn {
+            width: 100%; padding: 12px; border-radius: 14px; border: none;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; font-size: 0.88rem; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            box-shadow: 0 4px 14px rgba(16,185,129,0.35); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .end-btn:hover { transform: scale(1.02); opacity: 0.92; }
+        .end-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ── EMPTY ── */
+        .empty-sessions {
+            text-align: center; padding: 80px 20px;
+            color: var(--text-light); grid-column: 1/-1;
+        }
+        .empty-icon {
+            width: 80px; height: 80px; border-radius: 24px;
+            background: rgba(108,99,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; margin: 0 auto 16px;
+        }
+        .empty-sessions h4 { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .empty-sessions p  { font-size: 0.85rem; margin-bottom: 20px; }
+        .go-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 24px; border-radius: 20px; border: none;
+            background: var(--primary); color: white;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .go-btn:hover { opacity: 0.9; transform: scale(0.98); }
+
+        /* ── SKELETON ── */
+        .skeleton-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; padding: 20px; }
+        .skeleton-line { height: 14px; border-radius: 7px; background: var(--border); margin-bottom: 10px; animation: shimmer 1.4s infinite; }
+        .skeleton-line.short { width: 50%; }
+        @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #10b981; color: white;
+            padding: 12px 24px; border-radius: 20px;
+            font-size: 0.88rem; font-weight: 600;
+            box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+            z-index: 2000; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            white-space: nowrap; pointer-events: none;
+        }
+        .toast.show  { transform: translateX(-50%) translateY(0); }
+        .toast.error { background: var(--danger); }
+
+        @media (max-width: 600px) {
+            .sessions-grid { grid-template-columns: 1fr; }
+            .hero-inner { flex-direction: column; }
+            .hero-stats { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h2 onclick="navigate('index.html')">🔄 SkillSwap</h2>
+    <div class="nav-right">
+        <div class="coin-nav-badge" onclick="navigate('store.html')">
+            🪙 <span id="navCoinCount">—</span>
+        </div>
+        <button class="nav-icon-btn" onclick="navigate('index.html')"    title="Home">🏠</button>
+        <button class="nav-icon-btn" onclick="navigate('swaps.html')"    title="Swaps">🔄</button>
+        <button class="nav-icon-btn" onclick="navigate('chat-list.html')"title="Chat">💬</button>
+        <button class="nav-icon-btn" onclick="navigate('profile.html')"  title="Profile">👤</button>
+        <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
+    </div>
+</div>
+
+<div class="sessions-hero">
+    <div class="hero-inner">
+        <div class="hero-text">
+            <h1>📅 My Sessions</h1>
+            <p>Start → progress → complete your skill exchange sessions and earn coins</p>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">Total</div></div>
+            <div class="hero-stat"><div class="stat-val" id="statUpcoming">—</div><div class="stat-lbl">Upcoming</div></div>
+            <div class="hero-stat"><div class="stat-val" id="statInProgress">—</div><div class="stat-lbl">In Progress</div></div>
+            <div class="hero-stat"><div class="stat-val" id="statCompleted">—</div><div class="stat-lbl">Completed</div></div>
+            <div class="hero-stat"><div class="stat-val" id="statCoins">—</div><div class="stat-lbl">Coins Earned</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="page-content">
+    <div class="session-tabs">
+        <button class="session-tab active" onclick="filterSessions('all')"         data-filter="all">All</button>
+        <button class="session-tab"        onclick="filterSessions('UPCOMING')"    data-filter="UPCOMING">⏳ Upcoming</button>
+        <button class="session-tab"        onclick="filterSessions('IN_PROGRESS')" data-filter="IN_PROGRESS">🔥 In Progress</button>
+        <button class="session-tab"        onclick="filterSessions('COMPLETED')"   data-filter="COMPLETED">✅ Completed</button>
+    </div>
+
+    <div class="sessions-grid" id="sessionsGrid">
+        <div class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+        <div class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API           = "http://localhost:8080";
+    const token         = localStorage.getItem("token");
+    const currentUserId = localStorage.getItem("userId");
+
+    if (!token) { location.href = "login.html"; }
+
+    function navigate(url) { sessionStorage.setItem('navigating','true'); location.href = url; }
+    function authHeaders() { return { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }; }
+
+    const modeBtn = document.getElementById("modeBtn");
+    if (localStorage.getItem("mode") === "dark") { document.body.classList.add("dark"); modeBtn.innerText = "☀️"; }
+    function toggleMode() {
+        document.body.classList.toggle("dark");
+        const dark = document.body.classList.contains("dark");
+        localStorage.setItem("mode", dark ? "dark" : "light");
+        modeBtn.innerText = dark ? "☀️" : "🌙";
+    }
+
+    function showToast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className   = `toast${isError ? ' error' : ''}`;
+        setTimeout(() => t.classList.add("show"), 10);
+        setTimeout(() => t.classList.remove("show"), 3500);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;');
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    function timeUntil(iso) {
+        if (!iso) return '';
+        const diff = new Date(iso) - Date.now();
+        if (diff < 0) return 'Overdue';
+        const days  = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins  = Math.floor((diff % 3600000) / 60000);
+        if (days > 0)  return `in ${days}d ${hours}h`;
+        if (hours > 0) return `in ${hours}h ${mins}m`;
+        return 'Starting soon!';
+    }
+
+    let allSessions   = [];
+    let currentFilter = 'all';
+
+    async function loadSessions() {
+        try {
+            const res = await fetch(`${API}/api/sessions`, { headers: authHeaders() });
+            if (res.status === 401) { navigate('login.html'); return; }
+            if (!res.ok) throw new Error();
+            allSessions = await res.json();
+            updateStats();
+            renderSessions();
+            loadCoinBalance();
+        } catch(e) {
+            document.getElementById("sessionsGrid").innerHTML = `
+                <div class="empty-sessions">
+                    <div class="empty-icon">⚠️</div>
+                    <h4>Could not load sessions</h4>
+                    <p>Is the server running on port 8080?</p>
+                </div>`;
+        }
+    }
+
+    function updateStats() {
+        const total      = allSessions.length;
+        const upcoming   = allSessions.filter(s => s.status === 'UPCOMING').length;
+        const inProgress = allSessions.filter(s => s.status === 'IN_PROGRESS').length;
+        const completed  = allSessions.filter(s => s.status === 'COMPLETED').length;
+        document.getElementById("statTotal").textContent      = total;
+        document.getElementById("statUpcoming").textContent   = upcoming;
+        document.getElementById("statInProgress").textContent = inProgress;
+        document.getElementById("statCompleted").textContent  = completed;
+        document.getElementById("statCoins").textContent      = "🪙 " + (completed * 50);
+    }
+
+    function filterSessions(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.session-tab').forEach(t =>
+            t.classList.toggle('active', t.dataset.filter === filter));
+        renderSessions();
+    }
+
+    function renderSessions() {
+        const grid = document.getElementById("sessionsGrid");
+        const filtered = currentFilter === 'all'
+            ? allSessions
+            : allSessions.filter(s => s.status === currentFilter);
+
+        if (!filtered.length) {
+            grid.innerHTML = `
+                <div class="empty-sessions">
+                    <div class="empty-icon">📅</div>
+                    <h4>No ${currentFilter === 'all' ? '' : currentFilter.replace('_',' ').toLowerCase()} sessions</h4>
+                    <p>Sessions are created from accepted swap requests.</p>
+                    <button class="go-btn" onclick="navigate('swaps.html')">🔄 Go to Swaps</button>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = filtered.map((s, idx) => {
+            const isPublisher  = String(s.senderUserId) === String(currentUserId);
+            const isUpcoming   = s.status === 'UPCOMING';
+            const isInProgress = s.status === 'IN_PROGRESS';
+            const isCompleted  = s.status === 'COMPLETED';
+
+            const statusEmoji = { UPCOMING:'⏳', IN_PROGRESS:'🔥', COMPLETED:'✅', CANCELLED:'❌' };
+            const sInit = (s.senderUsername   || 'U').charAt(0).toUpperCase();
+            const rInit = (s.receiverUsername || 'U').charAt(0).toUpperCase();
+
+            return `
+            <div class="session-card ${isInProgress ? 'in-progress-card' : ''}" style="animation-delay:${idx*0.06}s">
+                ${isPublisher ? '<div class="publisher-tag">You published</div>' : ''}
+
+                <div class="status-badge status-${s.status}">
+                    ${statusEmoji[s.status] || '⏳'} ${s.status.replace('_',' ')}
+                </div>
+
+                ${isInProgress ? `<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:60%"></div></div>` : ''}
+
+                <div class="session-users">
+                    <div class="user-chip">
+                        <div class="user-chip-avatar">${escapeHtml(sInit)}</div>
+                        ${escapeHtml(s.senderUsername || 'Unknown')}
+                    </div>
+                    <span style="color:var(--text-light);">⇄</span>
+                    <div class="user-chip">
+                        <div class="user-chip-avatar recv">${escapeHtml(rInit)}</div>
+                        ${escapeHtml(s.receiverUsername || 'Unknown')}
+                    </div>
+                </div>
+
+                <div class="session-info">
+                    <div class="session-info-row">
+                        🗓️ Scheduled: <strong>${formatDate(s.scheduledAt)}</strong>
+                    </div>
+                    ${isUpcoming ? `
+                    <div class="session-info-row" style="color:var(--primary); font-weight:600;">
+                        ⏰ ${timeUntil(s.scheduledAt)}
+                    </div>` : ''}
+                    ${s.startedAt ? `
+                    <div class="session-info-row">
+                        🚀 Started: <strong>${formatDate(s.startedAt)}</strong>
+                    </div>` : ''}
+                    ${s.completedAt ? `
+                    <div class="session-info-row">
+                        ✅ Completed: <strong>${formatDate(s.completedAt)}</strong>
+                    </div>` : ''}
+                </div>
+
+                ${isCompleted ? `<div class="coin-earned-tag">🪙 +50 coins earned!</div>` : ''}
+
+                <!-- ✅ START button — publisher only, UPCOMING only -->
+                ${isPublisher && isUpcoming ? `
+                <button class="start-btn" id="start-${s.id}" onclick="startSession(${s.id})">
+                    🚀 Start Session
+                </button>` : ''}
+
+                <!-- ✅ END button — publisher only, IN_PROGRESS only -->
+                ${isPublisher && isInProgress ? `
+                <button class="end-btn" id="end-${s.id}" onclick="endSession(${s.id})">
+                    ✅ End Session &amp; Earn 50 🪙
+                </button>` : ''}
+
+                <!-- Waiting message for non-publisher -->
+                ${!isPublisher && (isUpcoming || isInProgress) ? `
+                <div style="text-align:center; font-size:0.78rem; color:var(--text-light); padding:8px 0;">
+                    ${isUpcoming   ? '⏳ Waiting for publisher to start...' : ''}
+                    ${isInProgress ? '🔥 Session is in progress...'        : ''}
+                </div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // ── START: UPCOMING → IN_PROGRESS ──
+    async function startSession(id) {
+        const btn = document.getElementById(`start-${id}`);
+        if (btn) { btn.disabled = true; btn.textContent = "Starting..."; }
+        try {
+            const res = await fetch(`${API}/api/sessions/${id}/start`, {
+                method: "PUT", headers: authHeaders()
+            });
+            if (res.ok) {
+                showToast("🚀 Session started! End it when done to earn coins.");
+                await loadSessions();
+            } else {
+                const err = await res.text();
+                showToast("❌ " + (err || "Could not start session"), true);
+                if (btn) { btn.disabled = false; btn.textContent = "🚀 Start Session"; }
+            }
+        } catch(e) {
+            showToast("❌ Could not connect", true);
+            if (btn) { btn.disabled = false; btn.textContent = "🚀 Start Session"; }
+        }
+    }
+
+    // ── END: IN_PROGRESS → COMPLETED + 50 coins ──
+    async function endSession(id) {
+        if (!confirm("End this session and earn 50 🪙 coins?")) return;
+        const btn = document.getElementById(`end-${id}`);
+        if (btn) { btn.disabled = true; btn.textContent = "Ending..."; }
+        try {
+            const res = await fetch(`${API}/api/sessions/${id}/end`, {
+                method: "PUT", headers: authHeaders()
+            });
+            if (res.ok) {
+                showToast("🎉 Session completed! You earned 50 🪙 coins!");
+                await loadSessions();
+            } else {
+                const err = await res.text();
+                showToast("❌ " + (err || "Could not end session"), true);
+                if (btn) { btn.disabled = false; btn.innerHTML = "✅ End Session &amp; Earn 50 🪙"; }
+            }
+        } catch(e) {
+            showToast("❌ Could not connect", true);
+            if (btn) { btn.disabled = false; btn.innerHTML = "✅ End Session &amp; Earn 50 🪙"; }
+        }
+    }
+
+    async function loadCoinBalance() {
+        try {
+            const res = await fetch(`${API}/api/coins/balance`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById("navCoinCount").textContent = data.balance ?? 0;
+            }
+        } catch(e) {}
+    }
+
+    window.addEventListener('beforeunload', () => {
+        const navigating = sessionStorage.getItem('navigating');
+        if (currentUserId && !navigating) navigator.sendBeacon(`${API}/presence/offline/${currentUserId}`);
+        sessionStorage.removeItem('navigating');
+    });
+
+    loadSessions();
+</script>
+</body>
+</html>
