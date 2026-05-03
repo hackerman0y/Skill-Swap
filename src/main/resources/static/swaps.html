@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSwap - Swap Requests</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: var(--bg); min-height: 100vh; }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 24px; background: var(--card);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 1px 12px rgba(108,99,255,0.07);
+        }
+        .navbar h2 { color: var(--primary); font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+        .nav-right { display: flex; gap: 10px; align-items: center; }
+        .nav-icon-btn {
+            background: transparent; border: 1.5px solid var(--border);
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; cursor: pointer; color: var(--text-light); transition: all 0.15s;
+        }
+        .nav-icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .coin-nav-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white; padding: 6px 14px; border-radius: 20px;
+            font-size: 0.82rem; font-weight: 700;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.35); cursor: pointer;
+        }
+        .mode-btn {
+            background: transparent; border: 1.5px solid var(--border);
+            color: var(--text-light); padding: 6px 10px; border-radius: 10px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+        }
+        .mode-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ── HERO ── */
+        .swaps-hero {
+            background: linear-gradient(135deg, #6c63ff 0%, #8b5cf6 100%);
+            padding: 32px 24px; position: relative; overflow: hidden;
+        }
+        .swaps-hero::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
+        }
+        .hero-inner {
+            max-width: 1100px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 16px; position: relative;
+        }
+        .hero-text h1 { font-size: 1.6rem; font-weight: 800; color: white; margin-bottom: 4px; }
+        .hero-text p  { font-size: 0.88rem; color: rgba(255,255,255,0.8); }
+        .hero-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+        .hero-stat {
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 14px; padding: 12px 20px; text-align: center;
+        }
+        .hero-stat .stat-val { font-size: 1.6rem; font-weight: 800; color: white; line-height: 1; }
+        .hero-stat .stat-lbl { font-size: 0.7rem; color: rgba(255,255,255,0.7); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        /* ── CONTENT ── */
+        .page-content { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+        /* ── TABS ── */
+        .swap-tabs {
+            display: flex; gap: 8px; margin-bottom: 24px;
+            border-bottom: 2px solid var(--border); padding-bottom: 0;
+        }
+        .swap-tab {
+            padding: 10px 20px; border-radius: 10px 10px 0 0;
+            border: none; background: transparent;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            color: var(--text-light); font-family: inherit;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px; transition: all 0.15s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .swap-tab:hover { color: var(--primary); }
+        .swap-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-badge {
+            background: var(--primary); color: white;
+            border-radius: 20px; font-size: 0.65rem; font-weight: 700;
+            padding: 1px 7px; min-width: 18px; text-align: center;
+        }
+
+        /* ── SWAP CARDS GRID ── */
+        .swaps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 18px;
+        }
+
+        /* ── SWAP CARD ── */
+        .swap-card {
+            background: var(--card); border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 20px;
+            position: relative; transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeUp 0.4s ease both;
+        }
+        .swap-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(108,99,255,0.1); }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+        /* Status badge */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+        }
+        .status-PENDING  { background: #fef3c7; color: #d97706; }
+        .status-ACCEPTED { background: #dcfce7; color: #059669; }
+        .status-REJECTED { background: #fee2e2; color: #dc2626; }
+        .status-CANCELLED{ background: #f1f5f9; color: #64748b; }
+        .dark .status-PENDING  { background: #451a03; color: #fbbf24; }
+        .dark .status-ACCEPTED { background: #052e16; color: #34d399; }
+        .dark .status-REJECTED { background: #450a0a; color: #f87171; }
+        .dark .status-CANCELLED{ background: #1e293b; color: #94a3b8; }
+
+        /* Skills exchange display */
+        .skills-exchange {
+            display: flex; align-items: center; gap: 10px;
+            margin: 14px 0; flex-wrap: wrap;
+        }
+        .skill-pill {
+            flex: 1; min-width: 120px;
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 10px 14px; text-align: center;
+        }
+        .skill-pill-label { font-size: 0.65rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .skill-pill-name  { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+        .exchange-arrow   { color: var(--primary); font-size: 1.2rem; font-weight: 700; flex-shrink: 0; }
+
+        /* Users row */
+        .swap-users {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 0; margin: 10px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .user-chip {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--bg); border-radius: 20px;
+            padding: 5px 12px 5px 5px; font-size: 0.78rem; font-weight: 600; color: var(--text);
+        }
+        .user-chip-avatar {
+            width: 24px; height: 24px; border-radius: 8px;
+            background: var(--primary); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .user-chip-avatar.receiver { background: var(--primary-light); }
+        .swap-arrow-icon { color: var(--text-light); font-size: 0.9rem; }
+
+        .swap-date { font-size: 0.72rem; color: var(--text-light); margin-top: 8px; }
+
+        /* ── ACTION BUTTONS ── */
+        .action-btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+        .btn-accept {
+            flex: 1; padding: 10px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white; font-size: 0.82rem; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            box-shadow: 0 3px 10px rgba(16,185,129,0.3); transition: all 0.15s;
+        }
+        .btn-accept:hover { transform: scale(1.02); opacity: 0.92; }
+
+        .btn-reject {
+            flex: 1; padding: 10px; border-radius: 12px; border: none;
+            background: #fee2e2; color: #dc2626;
+            font-size: 0.82rem; font-weight: 700;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .btn-reject:hover { background: #fecaca; }
+
+        .btn-cancel {
+            flex: 1; padding: 10px; border-radius: 12px;
+            border: 1.5px solid var(--border); background: transparent;
+            color: var(--text-light); font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
+
+        .btn-schedule {
+            width: 100%; padding: 11px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white; font-size: 0.85rem; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            box-shadow: 0 4px 14px rgba(108,99,255,0.3); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-schedule:hover { transform: scale(1.02); opacity: 0.92; }
+
+        .accepted-tag {
+            display: flex; align-items: center; gap: 6px;
+            background: #dcfce7; color: #059669;
+            padding: 8px 14px; border-radius: 12px;
+            font-size: 0.8rem; font-weight: 600; width: 100%;
+            justify-content: center;
+        }
+        .dark .accepted-tag { background: #052e16; color: #34d399; }
+
+        /* ── SCHEDULE MODAL ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--card); border-radius: 24px; padding: 28px 24px;
+            max-width: 380px; width: 100%;
+            animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+        .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .modal-sub   { font-size: 0.82rem; color: var(--text-light); margin-bottom: 20px; }
+        .modal-label { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+        .modal-input {
+            width: 100%; padding: 11px 14px;
+            border: 1.5px solid var(--border); border-radius: 12px;
+            background: var(--bg); color: var(--text);
+            font-size: 0.88rem; outline: none; font-family: inherit;
+            transition: border-color 0.2s; margin-bottom: 20px;
+        }
+        .modal-input:focus { border-color: var(--primary); }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-cancel-btn {
+            flex: 1; padding: 11px; border-radius: 14px;
+            border: 1.5px solid var(--border); background: transparent;
+            color: var(--text-light); font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .modal-cancel-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .modal-confirm-btn {
+            flex: 1; padding: 11px; border-radius: 14px; border: none;
+            background: var(--primary); color: white;
+            font-size: 0.88rem; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+            box-shadow: 0 4px 14px rgba(108,99,255,0.35); transition: all 0.15s;
+        }
+        .modal-confirm-btn:hover { background: var(--primary-dark); }
+        .modal-confirm-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ── EMPTY STATE ── */
+        .empty-swaps {
+            text-align: center; padding: 80px 20px;
+            color: var(--text-light); grid-column: 1/-1;
+        }
+        .empty-icon {
+            width: 80px; height: 80px; border-radius: 24px;
+            background: rgba(108,99,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; margin: 0 auto 16px;
+        }
+        .empty-swaps h4 { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+        .empty-swaps p  { font-size: 0.85rem; margin-bottom: 20px; }
+        .browse-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 24px; border-radius: 20px; border: none;
+            background: var(--primary); color: white;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .browse-btn:hover { opacity: 0.9; transform: scale(0.98); }
+
+        /* ── SKELETON ── */
+        .skeleton-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; padding: 20px; }
+        .skeleton-line { height: 14px; border-radius: 7px; background: var(--border); margin-bottom: 10px; animation: shimmer 1.4s infinite; }
+        .skeleton-line.short { width: 50%; }
+        @keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #10b981; color: white;
+            padding: 12px 24px; border-radius: 20px;
+            font-size: 0.88rem; font-weight: 600;
+            box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+            z-index: 2000; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            white-space: nowrap; pointer-events: none;
+        }
+        .toast.show  { transform: translateX(-50%) translateY(0); }
+        .toast.error { background: var(--danger); box-shadow: 0 8px 24px rgba(239,68,68,0.35); }
+
+        @media (max-width: 600px) {
+            .swaps-grid { grid-template-columns: 1fr; }
+            .hero-inner { flex-direction: column; }
+            .hero-stats { width: 100%; justify-content: space-between; }
+            .skills-exchange { flex-direction: column; }
+            .exchange-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+    <h2 onclick="navigate('index.html')">🔄 SkillSwap</h2>
+    <div class="nav-right">
+        <div class="coin-nav-badge" onclick="navigate('store.html')">
+            🪙 <span id="navCoinCount">—</span>
+        </div>
+        <button class="nav-icon-btn" onclick="navigate('index.html')"    title="Home">🏠</button>
+        <button class="nav-icon-btn" onclick="navigate('sessions.html')" title="Sessions">📅</button>
+        <button class="nav-icon-btn" onclick="navigate('chat-list.html')"title="Chat">💬</button>
+        <button class="nav-icon-btn" onclick="navigate('profile.html')"  title="Profile">👤</button>
+        <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
+    </div>
+</div>
+
+<!-- Hero -->
+<div class="swaps-hero">
+    <div class="hero-inner">
+        <div class="hero-text">
+            <h1>🔄 Swap Requests</h1>
+            <p>Manage your incoming and outgoing skill swap proposals</p>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="stat-val" id="statIncoming">—</div>
+                <div class="stat-lbl">Incoming</div>
+            </div>
+            <div class="hero-stat">
+                <div class="stat-val" id="statOutgoing">—</div>
+                <div class="stat-lbl">Outgoing</div>
+            </div>
+            <div class="hero-stat">
+                <div class="stat-val" id="statAccepted">—</div>
+                <div class="stat-lbl">Accepted</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="page-content">
+
+    <!-- Tabs -->
+    <div class="swap-tabs">
+        <button class="swap-tab active" onclick="switchTab('incoming')" id="tab-incoming">
+            📥 Incoming <span class="tab-badge" id="badge-incoming">0</span>
+        </button>
+        <button class="swap-tab" onclick="switchTab('outgoing')" id="tab-outgoing">
+            📤 Outgoing <span class="tab-badge" id="badge-outgoing">0</span>
+        </button>
+    </div>
+
+    <!-- Swaps grid -->
+    <div class="swaps-grid" id="swapsGrid">
+        <div class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+        <div class="skeleton-card"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+    </div>
+</div>
+
+<!-- Schedule Session Modal -->
+<div class="modal-overlay" id="scheduleModal">
+    <div class="modal-box">
+        <div class="modal-title">📅 Schedule a Session</div>
+        <div class="modal-sub">Set a date and time for your skill exchange session</div>
+        <label class="modal-label" for="sessionDate">Session Date & Time</label>
+        <input class="modal-input" type="datetime-local" id="sessionDate"/>
+        <div class="modal-btns">
+            <button class="modal-cancel-btn" onclick="closeScheduleModal()">Cancel</button>
+            <button class="modal-confirm-btn" id="scheduleConfirmBtn" onclick="confirmSchedule()">Schedule ✓</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+    const API           = "http://localhost:8080";
+    const token         = localStorage.getItem("token");
+    const currentUserId = localStorage.getItem("userId");
+
+    if (!token) { location.href = "login.html"; }
+
+    function navigate(url) { sessionStorage.setItem('navigating','true'); location.href = url; }
+    function authHeaders() { return { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }; }
+
+    const modeBtn = document.getElementById("modeBtn");
+    if (localStorage.getItem("mode") === "dark") { document.body.classList.add("dark"); modeBtn.innerText = "☀️"; }
+    function toggleMode() {
+        document.body.classList.toggle("dark");
+        const dark = document.body.classList.contains("dark");
+        localStorage.setItem("mode", dark ? "dark" : "light");
+        modeBtn.innerText = dark ? "☀️" : "🌙";
+    }
+
+    function showToast(msg, isError = false) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className   = `toast${isError ? ' error' : ''}`;
+        setTimeout(() => t.classList.add("show"), 10);
+        setTimeout(() => t.classList.remove("show"), 3500);
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;');
+    }
+
+    function formatDate(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    // ── State ──
+    let incomingSwaps = [];
+    let outgoingSwaps = [];
+    let currentTab    = 'incoming';
+    let pendingSwapId = null; // for scheduling
+
+    // ── Load both incoming and outgoing ──
+    async function loadSwaps() {
+        try {
+            const [incRes, outRes] = await Promise.all([
+                fetch(`${API}/api/swaps/incoming`, { headers: authHeaders() }),
+                fetch(`${API}/api/swaps/outgoing`, { headers: authHeaders() })
+            ]);
+
+            if (incRes.status === 401 || outRes.status === 401) { navigate('login.html'); return; }
+
+            incomingSwaps = incRes.ok ? await incRes.json() : [];
+            outgoingSwaps = outRes.ok ? await outRes.json() : [];
+
+            updateStats();
+            renderCurrentTab();
+            loadCoinBalance();
+        } catch(e) {
+            document.getElementById("swapsGrid").innerHTML = `
+                <div class="empty-swaps">
+                    <div class="empty-icon">⚠️</div>
+                    <h4>Could not load swaps</h4>
+                    <p>Is the server running on port 8080?</p>
+                </div>`;
+        }
+    }
+
+    function updateStats() {
+        const pendingIncoming = incomingSwaps.filter(s => s.status === 'PENDING').length;
+        const accepted = [...incomingSwaps, ...outgoingSwaps].filter(s => s.status === 'ACCEPTED').length;
+
+        document.getElementById("statIncoming").textContent = incomingSwaps.length;
+        document.getElementById("statOutgoing").textContent = outgoingSwaps.length;
+        document.getElementById("statAccepted").textContent = accepted;
+        document.getElementById("badge-incoming").textContent = pendingIncoming;
+        document.getElementById("badge-outgoing").textContent = outgoingSwaps.length;
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.swap-tab').forEach(t => {
+            t.classList.toggle('active', t.id === `tab-${tab}`);
+        });
+        renderCurrentTab();
+    }
+
+    function renderCurrentTab() {
+        const swaps = currentTab === 'incoming' ? incomingSwaps : outgoingSwaps;
+        renderSwaps(swaps, currentTab);
+    }
+
+    function renderSwaps(swaps, type) {
+        const grid = document.getElementById("swapsGrid");
+
+        if (!swaps.length) {
+            grid.innerHTML = `
+                <div class="empty-swaps">
+                    <div class="empty-icon">${type === 'incoming' ? '📥' : '📤'}</div>
+                    <h4>No ${type} requests yet</h4>
+                    <p>${type === 'incoming'
+                ? 'When someone wants to swap skills with you, it will appear here.'
+                : 'Go to a skill detail page and send a swap request to get started.'}</p>
+                    <button class="browse-btn" onclick="navigate('index.html')">🔍 Browse Skills</button>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = swaps.map((swap, idx) => {
+            const senderInitial   = (swap.senderUsername   || 'U').charAt(0).toUpperCase();
+            const receiverInitial = (swap.receiverUsername || 'U').charAt(0).toUpperCase();
+            const isPending   = swap.status === 'PENDING';
+            const isAccepted  = swap.status === 'ACCEPTED';
+
+            return `
+            <div class="swap-card" style="animation-delay:${idx*0.06}s">
+                <div class="status-badge status-${swap.status}">
+                    ${{ PENDING:'⏳', ACCEPTED:'✅', REJECTED:'❌', CANCELLED:'🚫' }[swap.status] || '⏳'}
+                    ${swap.status}
+                </div>
+
+                <!-- Skills being exchanged -->
+                <div class="skills-exchange">
+                    <div class="skill-pill">
+                        <div class="skill-pill-label">Offers</div>
+                        <div class="skill-pill-name">📖 ${escapeHtml(swap.offeredSkillName || '—')}</div>
+                    </div>
+                    <div class="exchange-arrow">⇄</div>
+                    <div class="skill-pill">
+                        <div class="skill-pill-label">Wants</div>
+                        <div class="skill-pill-name">📚 ${escapeHtml(swap.wantedSkillName || '—')}</div>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div class="swap-users">
+                    <div class="user-chip">
+                        <div class="user-chip-avatar">${escapeHtml(senderInitial)}</div>
+                        ${escapeHtml(swap.senderUsername || 'Unknown')}
+                    </div>
+                    <span class="swap-arrow-icon">→</span>
+                    <div class="user-chip">
+                        <div class="user-chip-avatar receiver">${escapeHtml(receiverInitial)}</div>
+                        ${escapeHtml(swap.receiverUsername || 'Unknown')}
+                    </div>
+                </div>
+
+                <div class="swap-date">📅 Sent: ${formatDate(swap.createdAt)}</div>
+
+                <!-- Action buttons -->
+                <div class="action-btns" style="margin-top:14px;">
+                    ${type === 'incoming' && isPending ? `
+                        <button class="btn-accept" onclick="acceptSwap(${swap.id})">✅ Accept</button>
+                        <button class="btn-reject" onclick="rejectSwap(${swap.id})">❌ Reject</button>
+                    ` : ''}
+
+                    ${type === 'outgoing' && isPending ? `
+                        <button class="btn-cancel" onclick="cancelSwap(${swap.id})">🚫 Cancel</button>
+                    ` : ''}
+
+                    ${isAccepted ? `
+                        <div style="width:100%">
+                            <div class="accepted-tag">✅ Swap accepted — ready to schedule!</div>
+                            <button class="btn-schedule" style="margin-top:8px"
+                                onclick="openScheduleModal(${swap.id})">
+                                📅 Schedule Session
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── ACCEPT ──
+    async function acceptSwap(id) {
+        try {
+            const res = await fetch(`${API}/api/swaps/${id}/accept`, {
+                method: "PATCH", headers: authHeaders()
+            });
+            if (res.ok) {
+                showToast("✅ Swap accepted! You can now schedule a session.");
+                await loadSwaps();
+            } else {
+                const err = await res.text();
+                showToast("❌ " + (err || "Could not accept"), true);
+            }
+        } catch(e) { showToast("❌ Could not connect", true); }
+    }
+
+    // ── REJECT ──
+    async function rejectSwap(id) {
+        if (!confirm("Reject this swap request?")) return;
+        try {
+            const res = await fetch(`${API}/api/swaps/${id}/reject`, {
+                method: "PATCH", headers: authHeaders()
+            });
+            if (res.ok) {
+                showToast("Swap request rejected.");
+                await loadSwaps();
+            } else {
+                showToast("❌ Could not reject", true);
+            }
+        } catch(e) { showToast("❌ Could not connect", true); }
+    }
+
+    // ── CANCEL ──
+    async function cancelSwap(id) {
+        if (!confirm("Cancel this swap request?")) return;
+        try {
+            const res = await fetch(`${API}/api/swaps/${id}/cancel`, {
+                method: "PATCH", headers: authHeaders()
+            });
+            if (res.ok) {
+                showToast("Swap request cancelled.");
+                await loadSwaps();
+            } else {
+                showToast("❌ Could not cancel", true);
+            }
+        } catch(e) { showToast("❌ Could not connect", true); }
+    }
+
+    // ── SCHEDULE SESSION MODAL ──
+    function openScheduleModal(swapId) {
+        pendingSwapId = swapId;
+        // Set default to tomorrow at 10am
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(10, 0, 0, 0);
+        document.getElementById("sessionDate").value =
+            tomorrow.toISOString().slice(0, 16);
+        document.getElementById("scheduleModal").classList.add("open");
+    }
+
+    function closeScheduleModal() {
+        document.getElementById("scheduleModal").classList.remove("open");
+        pendingSwapId = null;
+    }
+
+    async function confirmSchedule() {
+        const dateVal = document.getElementById("sessionDate").value;
+        if (!dateVal) { showToast("❌ Please pick a date and time", true); return; }
+        if (!pendingSwapId) return;
+
+        const btn = document.getElementById("scheduleConfirmBtn");
+        btn.disabled    = true;
+        btn.textContent = "Scheduling...";
+
+        try {
+            const res = await fetch(`${API}/api/sessions`, {
+                method:  "POST",
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    swapRequestId: pendingSwapId,
+                    scheduledAt:   new Date(dateVal).toISOString()
+                })
+            });
+
+            if (res.ok) {
+                closeScheduleModal();
+                showToast("🎉 Session scheduled! Go to Sessions to manage it.");
+                setTimeout(() => navigate('sessions.html'), 2000);
+            } else {
+                const err = await res.text();
+                showToast("❌ " + (err || "Could not schedule session"), true);
+            }
+        } catch(e) {
+            showToast("❌ Could not connect to server", true);
+        }
+
+        btn.disabled    = false;
+        btn.textContent = "Schedule ✓";
+    }
+
+    // ── Close modal on backdrop click ──
+    document.getElementById("scheduleModal").addEventListener("click", function(e) {
+        if (e.target === this) closeScheduleModal();
+    });
+
+    // ── Coin balance ──
+    async function loadCoinBalance() {
+        try {
+            const res = await fetch(`${API}/api/coins/balance`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById("navCoinCount").textContent = data.balance ?? 0;
+            }
+        } catch(e) {}
+    }
+
+    // ── Cleanup ──
+    window.addEventListener('beforeunload', () => {
+        const navigating = sessionStorage.getItem('navigating');
+        if (currentUserId && !navigating) {
+            navigator.sendBeacon(`${API}/presence/offline/${currentUserId}`);
+        }
+        sessionStorage.removeItem('navigating');
+    });
+
+    // ── Init ──
+    loadSwaps();
+</script>
+</body>
+</html>

@@ -32,7 +32,7 @@ public class Notification {
 
     private Long relatedId;
 
-    @Column(columnDefinition = "boolean default false")
+    @Column(name="is_read",columnDefinition = "boolean default false")
     private Boolean read = false;
 
     @Column(nullable = false)

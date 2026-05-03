@@ -11,4 +11,9 @@ public class SessionResponseDTO {
     private LocalDateTime scheduledAt;
     private SessionStatus status;
     private LocalDateTime createdAt;
+    private LocalDateTime startedAt;
+    private LocalDateTime completedAt;
+    private Long senderUserId;
+    private String senderUsername;
+    private String receiverUsername;
 }
