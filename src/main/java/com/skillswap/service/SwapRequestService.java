@@ -19,9 +19,10 @@ public class SwapRequestService {
     private final SwapRequestRepository swapRequestRepository;
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
-    private final NotificationService notificationService; // ── NEW ──
+    private final NotificationService notificationService;
+    private final EmailService emailService; // ── NEW ──
 
-    // ── Send swap request → notify receiver ──
+    // ── Send swap request → notify receiver in-app + by email ──
     public SwapResponseDTO sendSwapRequest(SwapRequestDTO dto, Long senderId) {
         if (senderId.equals(dto.getReceiverId()))
             throw new IllegalStateException("You cannot send a swap request to yourself.");
@@ -50,7 +51,7 @@ public class SwapRequestService {
 
         SwapRequest saved = swapRequestRepository.save(swapRequest);
 
-        // ── Notify receiver: someone wants to swap with them ──
+        // ── In-app notification ──
         notificationService.createNotification(
                 receiver.getId(),
                 "swap_request",
@@ -59,6 +60,17 @@ public class SwapRequestService {
                         + "\" for your \"" + wantedSkill.getName() + "\"",
                 saved.getId()
         );
+
+        // ── Email notification to receiver ──
+        if (receiver.getEmail() != null) {
+            emailService.sendSwapRequestEmail(
+                    receiver.getEmail(),
+                    receiver.getUsername(),
+                    sender.getUsername(),
+                    offeredSkill.getName(),
+                    wantedSkill.getName()
+            );
+        }
 
         return toDTO(saved);
     }
@@ -85,7 +97,6 @@ public class SwapRequestService {
         swap.setStatus(SwapStatus.ACCEPTED);
         SwapRequest saved = swapRequestRepository.save(swap);
 
-        // ── Notify sender: their request was accepted ──
         notificationService.createNotification(
                 swap.getSender().getId(),
                 "swap_accepted",
@@ -110,7 +121,6 @@ public class SwapRequestService {
         swap.setStatus(SwapStatus.REJECTED);
         SwapRequest saved = swapRequestRepository.save(swap);
 
-        // ── Notify sender: their request was rejected ──
         notificationService.createNotification(
                 swap.getSender().getId(),
                 "swap_rejected",
@@ -123,7 +133,7 @@ public class SwapRequestService {
         return toDTO(saved);
     }
 
-    // ── Cancel swap — no notification needed ──
+    // ── Cancel swap ──
     public SwapResponseDTO cancelRequest(Long swapId, Long userId) {
         SwapRequest swap = getSwapOrThrow(swapId);
 

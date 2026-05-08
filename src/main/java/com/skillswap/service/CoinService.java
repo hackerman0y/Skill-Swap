@@ -18,59 +18,50 @@ public class CoinService {
     private final CoinTransactionRepository coinTransactionRepository;
     private final StoreItemRepository storeItemRepository;
     private final UserInventoryRepository userInventoryRepository;
+    private final EmailService emailService;
 
     public CoinService(UserRepository userRepository,
                        CoinTransactionRepository coinTransactionRepository,
                        StoreItemRepository storeItemRepository,
-                       UserInventoryRepository userInventoryRepository) {
+                       UserInventoryRepository userInventoryRepository,
+                       EmailService emailService) {
         this.userRepository = userRepository;
         this.coinTransactionRepository = coinTransactionRepository;
         this.storeItemRepository = storeItemRepository;
         this.userInventoryRepository = userInventoryRepository;
+        this.emailService = emailService;
     }
 
-    // ── Get coin balance by summing all transactions ──
     public int getBalance(Long userId) {
         List<CoinTransaction> transactions =
                 coinTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
         int balance = 0;
         for (CoinTransaction t : transactions) {
-            if ("earn".equals(t.getType()))        balance += t.getAmount();
-            else if ("spend".equals(t.getType()))  balance -= t.getAmount();
+            if ("earn".equals(t.getType())) balance += t.getAmount();
+            else if ("spend".equals(t.getType())) balance -= t.getAmount();
         }
         return balance;
     }
 
-    // ── Award coins to a user ──
     public CoinTransaction earnCoins(Long userId, int amount, String reason) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         CoinTransaction transaction = CoinTransaction.builder()
-                .user(user)
-                .type("earn")
-                .amount(amount)
-                .reason(reason)
-                .build();
-
+                .user(user).type("earn").amount(amount).reason(reason).build();
         return coinTransactionRepository.save(transaction);
     }
 
-    // ── Get full transaction history ──
     public List<CoinTransaction> getTransactionHistory(Long userId) {
         return coinTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    // ── Get all available store items ──
     public List<StoreItem> getStoreItems() {
         return storeItemRepository.findByAvailableTrue();
     }
 
-    // ── Purchase a store item ──
     public UserInventory buyItem(Long userId, Long itemId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         StoreItem item = storeItemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
@@ -81,25 +72,30 @@ public class CoinService {
         if (balance < item.getPrice())
             throw new RuntimeException("Not enough coins");
 
-        // Deduct coins
         CoinTransaction transaction = CoinTransaction.builder()
-                .user(user)
-                .type("spend")
-                .amount(item.getPrice())
-                .reason("Bought item: " + item.getName())
-                .build();
+                .user(user).type("spend").amount(item.getPrice())
+                .reason("Bought item: " + item.getName()).build();
         coinTransactionRepository.save(transaction);
 
-        // Add to inventory
-        UserInventory inventory = UserInventory.builder()
-                .user(user)
-                .item(item)
-                .build();
+        UserInventory inventory = UserInventory.builder().user(user).item(item).build();
+        UserInventory saved = userInventoryRepository.save(inventory);
 
-        return userInventoryRepository.save(inventory);
+        // Send purchase confirmation email
+        if (user.getEmail() != null) {
+            int remainingBalance = balance - item.getPrice();
+            emailService.sendPurchaseConfirmationEmail(
+                    user.getEmail(),
+                    user.getUsername(),
+                    item.getName(),
+                    item.getIcon() != null ? item.getIcon() : "🎁",
+                    item.getCategory() != null ? item.getCategory() : "General",
+                    item.getPrice(),
+                    remainingBalance
+            );
+        }
+        return saved;
     }
 
-    // ── Get user's owned items ──
     public List<UserInventory> getUserInventory(Long userId) {
         return userInventoryRepository.findByUserId(userId);
     }
