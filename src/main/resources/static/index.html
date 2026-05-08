@@ -46,21 +46,28 @@
         }
         .coin-badge:hover { opacity:0.9; }
 
+        /* overflow:visible is critical — without it the badge gets clipped */
         .nav-icon-btn {
             position:relative; width:36px; height:36px; border-radius:10px;
             border:none; background:transparent; color:var(--text-light);
-            cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+            transition:all 0.15s; overflow:visible;
         }
         .nav-icon-btn svg { width:18px; height:18px; }
         .nav-icon-btn:hover { background:rgba(108,99,255,0.08); color:var(--primary); }
 
+        /* External badge — sits outside/above the icon */
         .nav-badge {
-            position:absolute; top:2px; right:2px; min-width:16px; height:16px;
+            position:absolute; top:-5px; right:-5px;
+            min-width:16px; height:16px;
             background:#ef4444; color:white; border-radius:20px;
-            font-size:0.58rem; font-weight:700;
+            font-size:0.6rem; font-weight:700; line-height:1;
             display:none; align-items:center; justify-content:center;
-            border:2px solid var(--card); padding:0 3px;
+            border:2px solid #f1f5f9; padding:0 3px;
+            pointer-events:none; z-index:10;
         }
+        .nav-badge.visible { display:flex; }
+        body.dark .nav-badge { border-color:#080810; }
 
         .nav-divider { width:1px; height:22px; background:var(--border); margin:0 4px; flex-shrink:0; }
 
@@ -88,7 +95,6 @@
             display:flex; align-items:center; justify-content:center; flex-shrink:0;
         }
 
-        /* User dropdown */
         .user-dropdown {
             position:absolute; top:calc(100% + 8px); right:0;
             background:var(--card); border:1.5px solid var(--border);
@@ -114,6 +120,17 @@
         .dropdown-divider { height:1px; background:var(--border); margin:4px 0; }
 
         .filters-box { top:66px; right:20px; }
+
+        .equipped-badge {
+            display:inline-flex; align-items:center; gap:3px;
+            font-size:0.62rem; font-weight:600;
+            padding:2px 7px; border-radius:20px;
+            background:rgba(108,99,255,0.12);
+            border:1px solid rgba(108,99,255,0.28);
+            color:#a89fff; vertical-align:middle;
+            margin-left:4px; white-space:nowrap;
+            line-height:1.4;
+        }
 
         @media (max-width:960px) { .nav-center { display:none; } }
         @media (max-width:768px) { .navbar { padding:0 14px; } }
@@ -157,13 +174,16 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         </button>
 
+        <!-- Chat icon with EXTERNAL badge -->
         <button class="nav-icon-btn" onclick="navigate('chat-list.html')" title="Messages">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <span class="nav-badge" id="chatBadge"></span>
         </button>
 
+        <!-- Bell icon with EXTERNAL badge -->
         <button class="nav-icon-btn" onclick="navigate('notifications.html')" title="Notifications">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="nav-badge" id="notifBadge"></span>
         </button>
 
         <button class="nav-icon-btn" onclick="toggleFilters()" title="Filter">
@@ -266,9 +286,60 @@
     function escapeHtml(s){if(!s)return'';return s.replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;');}
     function handleUnauthorized(res){if(res.status===401||res.status===403){alert("Session expired.");localStorage.clear();location.href="login.html";return true;}return false;}
     window.addEventListener('beforeunload',()=>{const u=localStorage.getItem('userId'),n=sessionStorage.getItem('navigating');if(u&&!n)navigator.sendBeacon(`${API}/presence/offline/${u}`);sessionStorage.removeItem('navigating');});
+
+    const BADGE_EMOJI = {
+        'Top Teacher':'🏆','Expert Badge':'⭐','Early Adopter':'🦋',
+        'Gold Frame':'🟡','Diamond Frame':'💎','Fire Frame':'🔥','Galaxy Frame':'🌌',
+        'Profile Boost 24h':'🚀','Skill Spotlight':'✨','Double XP Weekend':'⚡',
+    };
+    function badgeChip(name) {
+        if (!name) return '';
+        const emoji = BADGE_EMOJI[name] || '🏷️';
+        return `<span class="equipped-badge">${emoji} ${escapeHtml(name)}</span>`;
+    }
+
     async function loadSkills(){try{const res=await fetch(`${API}/api/skills`);if(!res.ok)throw new Error();allSkills=await res.json();updateDisplay();}catch(e){document.getElementById("skillsContainer").innerHTML='<div class="empty-state">⚠️ Could not load skills.</div>';}}
     function updateDisplay(){let f=[...allSkills];const q=search.value.toLowerCase();if(q)f=f.filter(x=>(x.name||'').toLowerCase().includes(q)||(x.skillToTeach||'').toLowerCase().includes(q)||(x.skillToLearn||'').toLowerCase().includes(q)||(x.category||'').toLowerCase().includes(q)||(x.type||'').toLowerCase().includes(q)||(x.description||'').toLowerCase().includes(q)||(x.user?.username||'').toLowerCase().includes(q));if(catFilter.value)f=f.filter(x=>x.category?.toLowerCase()===catFilter.value.toLowerCase());if(sortFilter.value==="az")f.sort((a,b)=>a.name.localeCompare(b.name));if(sortFilter.value==="za")f.sort((a,b)=>b.name.localeCompare(a.name));if(sortFilter.value==="pop")f.sort((a,b)=>(b.popularity||0)-(a.popularity||0));displaySkills(f);}
-    function displaySkills(skills){const c=document.getElementById("skillsContainer");if(!skills.length){c.innerHTML='<div class="empty-state">✨ No skills found. Add one!</div>';return;}const cu=getCurrentUser(),uid=localStorage.getItem("userId"),liked=JSON.parse(localStorage.getItem(`likedSkills_${uid}`)||"[]");c.innerHTML=skills.map(s=>{const u=s.user||{},un=u.username||"Unknown",own=cu&&(s.user?.id===cu.id),lk=liked.includes(s.id);return`<div class="skill-card" onclick="navigate('details.html?id=${s.id}')"><div class="skill-name">${escapeHtml(s.name)}</div><div class="skill-category">#${escapeHtml(s.category||"General")}</div>${s.description?`<div class="skill-description">${escapeHtml(s.description)}</div>`:''}${s.skillToTeach?`<div style="font-size:0.75rem;margin:4px 0;color:var(--text-light);">📖 Teaches: <strong style="color:var(--text)">${escapeHtml(s.skillToTeach)}</strong></div>`:''}${s.skillToLearn?`<div style="font-size:0.75rem;margin:4px 0;color:var(--text-light);">📚 Wants to learn: <strong style="color:var(--text)">${escapeHtml(s.skillToLearn)}</strong></div>`:''}<div class="user-row"><div class="user-info"><div class="user-avatar">${(un.charAt(0)||'U').toUpperCase()}</div><div><div class="user-name">${escapeHtml(un)}</div><div><span class="online-dot ${u.online?'online':'offline'}"></span><span style="font-size:0.65rem;">${u.online?'Online':'Offline'}</span></div></div></div><div class="type-badge ${s.type==='teach'?'type-teach':'type-learn'}">${s.type==='teach'?'TEACH':'LEARN'}</div></div><div class="card-footer"><div class="popularity">🔥 ${s.popularity||0}</div><div class="action-group"><button class="action-btn" onclick="event.stopPropagation();increasePopularity(${s.id})" title="${lk?'Already liked':'Like'}" style="${lk?'opacity:0.4;cursor:not-allowed;':''}">${lk?'❤️':'🤍'}</button>${own?`<button class="action-btn" onclick="event.stopPropagation();editSkill(${s.id})">✏️</button><button class="action-btn" onclick="event.stopPropagation();deleteSkill(${s.id})">🗑️</button>`:''}</div></div></div>`;}).join('');}
+
+    function displaySkills(skills) {
+        const c = document.getElementById("skillsContainer");
+        if (!skills.length) { c.innerHTML='<div class="empty-state">✨ No skills found. Add one!</div>'; return; }
+        const cu  = getCurrentUser();
+        const uid = localStorage.getItem("userId");
+        const liked = JSON.parse(localStorage.getItem(`likedSkills_${uid}`) || "[]");
+        c.innerHTML = skills.map(s => {
+            const u   = s.user || {};
+            const un  = u.username || "Unknown";
+            const own = cu && (s.user?.id === cu.id);
+            const lk  = liked.includes(s.id);
+            const badge = badgeChip(u.activeBadgeName);
+            return `<div class="skill-card" onclick="navigate('details.html?id=${s.id}')">
+                <div class="skill-name">${escapeHtml(s.name)}</div>
+                <div class="skill-category">#${escapeHtml(s.category||"General")}</div>
+                ${s.description ? `<div class="skill-description">${escapeHtml(s.description)}</div>` : ''}
+                ${s.skillToTeach ? `<div style="font-size:0.75rem;margin:4px 0;color:var(--text-light);">📖 Teaches: <strong style="color:var(--text)">${escapeHtml(s.skillToTeach)}</strong></div>` : ''}
+                ${s.skillToLearn ? `<div style="font-size:0.75rem;margin:4px 0;color:var(--text-light);">📚 Wants to learn: <strong style="color:var(--text)">${escapeHtml(s.skillToLearn)}</strong></div>` : ''}
+                <div class="user-row">
+                    <div class="user-info">
+                        <div class="user-avatar">${(un.charAt(0)||'U').toUpperCase()}</div>
+                        <div>
+                            <div class="user-name">${escapeHtml(un)}${badge}</div>
+                            <div><span class="online-dot ${u.online?'online':'offline'}"></span><span style="font-size:0.65rem;">${u.online?'Online':'Offline'}</span></div>
+                        </div>
+                    </div>
+                    <div class="type-badge ${s.type==='teach'?'type-teach':'type-learn'}">${s.type==='teach'?'TEACH':'LEARN'}</div>
+                </div>
+                <div class="card-footer">
+                    <div class="popularity">🔥 ${s.popularity||0}</div>
+                    <div class="action-group">
+                        <button class="action-btn" onclick="event.stopPropagation();increasePopularity(${s.id})" title="${lk?'Already liked':'Like'}" style="${lk?'opacity:0.4;cursor:not-allowed;':''}">${lk?'❤️':'🤍'}</button>
+                        ${own ? `<button class="action-btn" onclick="event.stopPropagation();editSkill(${s.id})">✏️</button><button class="action-btn" onclick="event.stopPropagation();deleteSkill(${s.id})">🗑️</button>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
     async function addSkill(){const cu=getCurrentUser();if(!cu){location.href="login.html";return;}const cv=cat.value==="Other"?otherCategory.value.trim():cat.value;if(!nameInput.value.trim()){alert("Enter skill name");return;}const sk={name:nameInput.value.trim(),category:cv,description:desc.value.trim(),type:type.value,skillToTeach:document.getElementById("skillToTeach").value.trim(),skillToLearn:document.getElementById("skillToLearn").value.trim()};const btn=document.getElementById("addBtn");btn.disabled=true;btn.innerText="Saving...";try{const url=editingId?`${API}/api/skills/${editingId}`:`${API}/api/skills`,method=editingId?"PUT":"POST",res=await fetch(url,{method,headers:authHeaders(),body:JSON.stringify(sk)});if(handleUnauthorized(res))return;if(!res.ok){alert("Could not save skill");return;}resetForm();await loadSkills();}catch(e){alert("Connection error.");}finally{btn.disabled=false;btn.innerText="Save";}}
     async function deleteSkill(id){if(!getCurrentUser()){location.href="login.html";return;}if(!confirm("Delete this skill?"))return;try{const res=await fetch(`${API}/api/skills/${id}`,{method:"DELETE",headers:authHeaders()});if(handleUnauthorized(res))return;if(!res.ok){alert("Could not delete skill");return;}await loadSkills();}catch(e){alert("Connection error.");}}
     function editSkill(id){if(!getCurrentUser()){location.href="login.html";return;}const s=allSkills.find(x=>x.id===parseInt(id));if(!s){alert("Skill not found");return;}nameInput.value=s.name;cat.value=s.category||"";desc.value=s.description||"";type.value=s.type||"teach";document.getElementById("skillToTeach").value=s.skillToTeach||"";document.getElementById("skillToLearn").value=s.skillToLearn||"";if(!["Programming","Design","Business","Language","Fitness",""].includes(s.category)){cat.value="Other";otherCategory.style.display="block";otherCategory.value=s.category||"";}else{otherCategory.style.display="none";}editingId=parseInt(id);modal.style.display="flex";}
@@ -277,6 +348,7 @@
     function resetForm(){modal.style.display="none";editingId=null;nameInput.value="";cat.value="";desc.value="";type.value="teach";otherCategory.value="";otherCategory.style.display="none";document.getElementById("skillToTeach").value="";document.getElementById("skillToLearn").value="";}
     function toggleFilters(){filtersBox.style.display=filtersBox.style.display==="flex"?"none":"flex";}
     cat.onchange=()=>{otherCategory.style.display=cat.value==="Other"?"block":"none";};
+
     function loadUser(){
         const un=localStorage.getItem("username");
         if(!un){
@@ -300,6 +372,11 @@
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
                             My Swaps
                         </button>
+                        ${localStorage.getItem('role') === 'ADMIN' ? `
+                        <button class="dropdown-item" onclick="navigate('admin.html')">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                            Admin Panel
+                        </button>` : ''}
                         <div class="dropdown-divider"></div>
                         <button class="dropdown-item danger" onclick="logout()">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -310,24 +387,59 @@
         }
     }
 
-    function toggleUserDropdown(e) {
-        e.stopPropagation();
-        document.getElementById("userDropdown").classList.toggle("open");
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function() {
-        const dd = document.getElementById("userDropdown");
-        if (dd) dd.classList.remove("open");
-    });
-    async function logout(){const uid=localStorage.getItem('userId');if(uid)navigator.sendBeacon(`${API}/presence/offline/${uid}`);try{await fetch(`${API}/api/users/logout`,{method:"POST",headers:authHeaders()});}catch(_){}localStorage.removeItem("token");localStorage.removeItem("userId");localStorage.removeItem("username");localStorage.removeItem("email");location.href="login.html";}
+    function toggleUserDropdown(e){e.stopPropagation();document.getElementById("userDropdown").classList.toggle("open");}
+    document.addEventListener('click',function(){const dd=document.getElementById("userDropdown");if(dd)dd.classList.remove("open");});
+    async function logout(){const uid=localStorage.getItem('userId');if(uid)navigator.sendBeacon(`${API}/presence/offline/${uid}`);try{await fetch(`${API}/api/users/logout`,{method:"POST",headers:authHeaders()});}catch(_){}localStorage.removeItem("token");localStorage.removeItem("userId");localStorage.removeItem("username");localStorage.removeItem("email");localStorage.removeItem("role");localStorage.removeItem("activeBadgeId");localStorage.removeItem("activeBadgeName");localStorage.removeItem("activeBadgeType");location.href="login.html";}
     function toggleMobileNav(){document.getElementById("mobileNav").classList.toggle("open");}
     function closeMobileNav(){document.getElementById("mobileNav").classList.remove("open");}
-    document.addEventListener('click',function(e){const nav=document.getElementById("mobileNav"),ham=document.querySelector(".hamburger");if(nav.classList.contains("open")&&!nav.contains(e.target)&&!ham.contains(e.target))closeMobileNav();});
-    async function loadCoinBalance(){if(!getToken())return;try{const res=await fetch(`${API}/api/coins/balance`,{headers:authHeaders()});if(res.ok){const d=await res.json(),b=d.balance??0;document.getElementById("navCoinCount").textContent=b;const mc=document.getElementById("mobileCoins");if(mc)mc.textContent="🪙 "+b;}}catch(e){document.getElementById("navCoinCount").textContent="0";}}
-    async function loadUnreadCount(){if(!getToken())return;try{const res=await fetch(`${API}/api/messages/unread/count`,{headers:authHeaders()});if(res.ok){const d=await res.json(),cnt=d.count??0,badge=document.getElementById("chatBadge"),bb=document.getElementById("bottomChatBadge");if(cnt>0){const lbl=cnt>99?"99+":cnt;if(badge){badge.textContent=lbl;badge.style.display="flex";}if(bb){bb.textContent=lbl;bb.style.display="flex";}}else{if(badge)badge.style.display="none";if(bb)bb.style.display="none";}}}catch(e){}}
+    document.addEventListener('click',function(e){const nav=document.getElementById("mobileNav"),ham=document.querySelector(".hamburger");if(nav&&nav.classList.contains("open")&&!nav.contains(e.target)&&ham&&!ham.contains(e.target))closeMobileNav();});
+
+    async function loadCoinBalance(){
+        if(!getToken())return;
+        try{
+            const res=await fetch(`${API}/api/coins/balance`,{headers:authHeaders()});
+            if(res.ok){const d=await res.json(),b=d.balance??0;document.getElementById("navCoinCount").textContent=b;const mc=document.getElementById("mobileCoins");if(mc)mc.textContent="🪙 "+b;}
+        }catch(e){document.getElementById("navCoinCount").textContent="0";}
+    }
+
+    // ── Apply count to any badge element ──
+    function applyBadge(el, cnt) {
+        if (!el) return;
+        if (cnt > 0) { el.textContent = cnt > 99 ? "99+" : cnt; el.classList.add("visible"); }
+        else           el.classList.remove("visible");
+    }
+
+    // ── Chat unread badge — tries every possible field name ──
+    async function loadChatBadge() {
+        if (!getToken()) return;
+        try {
+            const res = await fetch(`${API}/api/messages/unread/count`, { headers: authHeaders() });
+            if (!res.ok) return;
+            const d   = await res.json();
+            const cnt = typeof d === 'number' ? d : (d.count ?? d.unreadCount ?? d.unread ?? d.total ?? 0);
+            applyBadge(document.getElementById("chatBadge"), cnt);
+            const bb = document.getElementById("bottomChatBadge");
+            if (bb) { if (cnt > 0) { bb.textContent = cnt > 99 ? "99+" : cnt; bb.style.display = "flex"; } else bb.style.display = "none"; }
+        } catch(e) {}
+    }
+
+    // ── Notification unread badge — tries every possible field name ──
+    async function loadNotifBadge() {
+        if (!getToken()) return;
+        try {
+            const res = await fetch(`${API}/api/notifications/unread-count`, { headers: authHeaders() });
+            if (!res.ok) return;
+            const d   = await res.json();
+            const cnt = typeof d === 'number' ? d : (d.count ?? d.unreadCount ?? d.unread ?? 0);
+            applyBadge(document.getElementById("notifBadge"), cnt);
+        } catch(e) {}
+    }
+
+    async function loadUnreadCount() { await loadChatBadge(); await loadNotifBadge(); }
+
     search.oninput=updateDisplay;catFilter.onchange=updateDisplay;sortFilter.onchange=updateDisplay;
     loadSkills();loadUser();loadCoinBalance();loadUnreadCount();setInterval(loadUnreadCount,15000);
+
     const viewBtn=document.getElementById("viewToggleBtn");
     function applyViewMode(){const m=localStorage.getItem("viewMode")==="mobile";document.body.classList.toggle("mobile-view",m);viewBtn.textContent=m?"🖥️":"📱";viewBtn.setAttribute("data-tip",m?"Desktop view":"Mobile view");}
     function toggleView(){localStorage.setItem("viewMode",localStorage.getItem("viewMode")==="mobile"?"desktop":"mobile");applyViewMode();}

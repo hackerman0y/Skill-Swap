@@ -6,6 +6,8 @@ import com.skillswap.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.*;
 
@@ -25,14 +27,22 @@ public class UserController {
     // ─── Auth ────────────────────────────────────────────────────────────────
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody User request) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody User request,
+                                                     HttpServletResponse httpResponse) {
         String token = userService.login(request.getEmail(), request.getPassword());
         User user = userService.getUserByEmail(request.getEmail());
+
+        Cookie cookie = new Cookie("auth_token", token);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 3600);
+        httpResponse.addCookie(cookie);
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
         response.put("userId", user.getId());
         response.put("username", user.getUsername());
+        response.put("role", user.getRole());
         return ResponseEntity.ok(response);
     }
 
@@ -47,30 +57,31 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
+    public ResponseEntity<String> logout(HttpServletResponse httpResponse) {
+        Cookie cookie = new Cookie("auth_token", "");
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        httpResponse.addCookie(cookie);
         SecurityContextHolder.clearContext();
         return ResponseEntity.ok("Logged out successfully");
     }
 
     // ─── User / Profile ──────────────────────────────────────────────────────
 
-    // ── FIX 5: Return real user data instead of hardcoded fake data ──
     @GetMapping("/{id}")
     public ResponseEntity<User> getUser(@PathVariable Long id) {
         try {
-            User user = userService.getUser(id);  // ✅ was getAllUser(id)
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(userService.getUser(id));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    // ── FIX 7: Get all users (used by chat-list.html) ──
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         try {
-            List<User> users = userService.getAllUsers();
-            return ResponseEntity.ok(users);
+            return ResponseEntity.ok(userService.getAllUsers());
         } catch (Exception e) {
             return ResponseEntity.ok(List.of());
         }
@@ -78,14 +89,29 @@ public class UserController {
 
     @GetMapping("/profile/{id}")
     public User getProfile(@PathVariable Long id) {
-        return userService.getUser(id);  // ✅ was getAllUser(id)
+        return userService.getUser(id);
     }
 
+    // ── Fixed: build a Map response so badge fields are included alongside user data ──
     @GetMapping("/me")
-    public ResponseEntity<User> getMe(@RequestHeader("Authorization") String token) {
-        String email = jwtUtil.extractEmail(token.substring(7));
+    public ResponseEntity<Map<String, Object>> getMe(
+            @RequestHeader("Authorization") String authHeader) {
+
+        String email = jwtUtil.extractEmail(authHeader.substring(7));
         User user = userService.getUserByEmail(email);
-        return ResponseEntity.ok(user);
+
+        Map<String, Object> response = new HashMap<>(); // ← was missing entirely
+        response.put("id",              user.getId());
+        response.put("username",        user.getUsername());
+        response.put("email",           user.getEmail());
+        response.put("role",            user.getRole());
+        response.put("trustScore",      user.getTrustScore());
+        response.put("online",          user.getOnline());
+        response.put("activeBadgeId",   user.getActiveBadgeId());   // ← new
+        response.put("activeBadgeName", user.getActiveBadgeName()); // ← new
+        response.put("activeBadgeType", user.getActiveBadgeType()); // ← new
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/settings")
@@ -95,5 +121,31 @@ public class UserController {
         String email = jwtUtil.extractEmail(token.substring(7));
         User updated = userService.updateProfile(email, request);
         return ResponseEntity.ok(updated);
+    }
+
+    // ─── Equip Badge ─────────────────────────────────────────────────────────
+
+    @PutMapping("/equip/{itemId}")
+    public ResponseEntity<?> equipItem(@PathVariable Long itemId,
+                                       @RequestHeader("Authorization") String authHeader) {
+        try {
+            String email = jwtUtil.extractEmail(authHeader.substring(7));
+            User user = userService.getUserByEmail(email);
+
+            User updated = userService.equipItem(user.getId(), itemId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("activeBadgeId",   updated.getActiveBadgeId());
+            response.put("activeBadgeName", updated.getActiveBadgeName());
+            response.put("activeBadgeType", updated.getActiveBadgeType());
+            response.put("message", updated.getActiveBadgeId() == null
+                    ? "Badge unequipped"
+                    : "\"" + updated.getActiveBadgeName() + "\" equipped!");
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
