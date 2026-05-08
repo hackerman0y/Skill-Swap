@@ -86,8 +86,7 @@
             position: relative; animation: fadeUp 0.4s ease both;
         }
         .item-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(108,99,255,0.12); border-color: var(--primary); }
-        .item-card.owned { opacity: 0.7; }
-        .item-card.owned:hover { transform: none; box-shadow: none; border-color: var(--border); }
+        .item-card.owned { opacity: 1; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         .item-card:nth-child(1){animation-delay:.05s} .item-card:nth-child(2){animation-delay:.1s}
         .item-card:nth-child(3){animation-delay:.15s} .item-card:nth-child(4){animation-delay:.2s}
@@ -122,7 +121,7 @@
         .dark .tag-boost  { background: #500724; color: #f472b6; }
         .item-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 4px; letter-spacing: -0.2px; }
         .item-desc { font-size: 0.75rem; color: var(--text-light); line-height: 1.4; margin-bottom: 14px; }
-        .item-footer { display: flex; align-items: center; justify-content: space-between; }
+        .item-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .item-price { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 1rem; color: #d97706; }
         .price-coin { font-size: 1.1rem; }
 
@@ -136,6 +135,23 @@
         .buy-btn:disabled, .buy-btn.cant-afford { background: var(--border); color: var(--text-light); cursor: not-allowed; box-shadow: none; transform: none; }
         .buy-btn.owned-btn { background: #10b981; box-shadow: 0 3px 10px rgba(16,185,129,0.25); cursor: default; }
         .buy-btn.owned-btn:hover { transform: none; }
+
+        /* ── Equip button ── */
+        .equip-btn {
+            padding: 7px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+            cursor: pointer; border: 1.5px solid rgba(108,99,255,0.45);
+            background: transparent; color: #8b5cf6;
+            font-family: inherit; transition: all 0.18s; white-space: nowrap;
+        }
+        .equip-btn:hover:not(.is-equipped) {
+            background: rgba(108,99,255,0.12); border-color: var(--primary); color: var(--primary);
+        }
+        .equip-btn.is-equipped {
+            background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.45); color: #10b981;
+        }
+        .equip-btn.is-equipped:hover {
+            background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.4); color: #ef4444;
+        }
 
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
@@ -267,26 +283,53 @@
         { id:11, type:'boost',  name:'Double XP Weekend',   emoji:'⚡', price:350,  desc:'Earn 2× coins from all sessions for 48 hours.' },
     ];
 
+    // ── Badge emoji map (matches item names) ──────────────────────────────────
+    const BADGE_EMOJI = {
+        'Top Teacher':       '🏆',
+        'Expert Badge':      '⭐',
+        'Early Adopter':     '🦋',
+        'Gold Frame':        '🟡',
+        'Diamond Frame':     '💎',
+        'Fire Frame':        '🔥',
+        'Galaxy Frame':      '🌌',
+        'Profile Boost 24h': '🚀',
+        'Skill Spotlight':   '✨',
+        'Double XP Weekend': '⚡',
+    };
+
     let userBalance     = 0;
     let ownedItems      = new Set();
     let currentCategory = 'all';
     let pendingItem     = null;
+    let activeEquipId   = parseInt(localStorage.getItem('activeBadgeId')) || null;
 
-    // ── Load balance from backend ──
+    // ── Load balance ──────────────────────────────────────────────────────────
     async function loadBalance() {
         try {
             const res = await fetch(`${API}/api/coins/balance`, { headers: authHeaders() });
             if (res.ok) {
-                const data  = await res.json();
+                const data = await res.json();
                 userBalance = data.balance ?? 0;
+                // Save to localStorage so it persists
+                localStorage.setItem('coins', userBalance);
             }
-        } catch(e) { userBalance = 0; }
+        } catch(e) {
+            userBalance = 0;
+            console.error('Failed to load balance:', e);
+        }
         document.getElementById("balanceAmount").textContent = userBalance;
         document.getElementById("navCoinCount").textContent  = userBalance;
     }
 
-    // ── Load owned items from backend ──
-    // UserInventory: { id, user, item: { id, name, type, ... }, purchasedAt }
+    // Call loadBalance on page load
+    document.addEventListener('DOMContentLoaded', loadBalance);
+
+    // Also call it when the page becomes visible (user returns to tab)
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) loadBalance();
+    });
+
+    // ── Load owned inventory ──────────────────────────────────────────────────
     async function loadInventory() {
         try {
             const res = await fetch(`${API}/api/store/inventory`, { headers: authHeaders() });
@@ -297,7 +340,7 @@
         } catch(e) { ownedItems = new Set(); }
     }
 
-    // ── Render items ──
+    // ── Render grid ───────────────────────────────────────────────────────────
     function renderItems() {
         const grid     = document.getElementById("itemsGrid");
         const filtered = currentCategory === 'all'
@@ -314,6 +357,11 @@
         grid.innerHTML = filtered.map((item, idx) => {
             const owned      = ownedItems.has(item.id);
             const cantAfford = !owned && userBalance < item.price;
+            const isEquipped = owned && item.id === activeEquipId;
+
+            // Only badges and frames can be equipped
+            const canEquip   = owned && (item.type === 'badge' || item.type === 'frame');
+
             return `
             <div class="item-card ${owned ? 'owned' : ''}" style="animation-delay:${idx*0.05}s">
                 ${owned ? '<div class="owned-ribbon">✓ Owned</div>' : ''}
@@ -327,17 +375,52 @@
                     <div class="item-footer">
                         <div class="item-price"><span class="price-coin">🪙</span>${item.price}</div>
                         ${owned
-                ? `<button class="buy-btn owned-btn">✓ Owned</button>`
+                ? canEquip
+                    ? `<button class="equip-btn ${isEquipped ? 'is-equipped' : ''}"
+                                        data-item-id="${item.id}"
+                                        onclick="equipItem(${item.id}, '${item.name.replace(/'/g,"\\'")}')">
+                                        ${isEquipped ? '✅ Equipped' : 'Equip'}
+                                   </button>`
+                    : `<button class="buy-btn owned-btn" disabled>✓ Owned</button>`
                 : `<button class="buy-btn ${cantAfford ? 'cant-afford' : ''}"
-                                onclick="openBuyModal(${item.id})"
-                                ${cantAfford ? 'disabled title="Not enough coins"' : ''}>
-                                ${cantAfford ? 'Need more 🪙' : 'Buy'}
+                                    onclick="openBuyModal(${item.id})"
+                                    ${cantAfford ? 'disabled title="Not enough coins"' : ''}>
+                                    ${cantAfford ? 'Need more 🪙' : 'Buy'}
                                </button>`
             }
                     </div>
                 </div>
             </div>`;
         }).join('');
+    }
+
+    // ── Equip / unequip ───────────────────────────────────────────────────────
+    async function equipItem(itemId, itemName) {
+        try {
+            const res = await fetch(`${API}/api/users/equip/${itemId}`, {
+                method: 'PUT',
+                headers: authHeaders()
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showToast('❌ ' + (data.message || data), true);
+                return;
+            }
+
+            // Sync localStorage so other pages (profile, index) reflect the change
+            activeEquipId = data.activeBadgeId ?? null;
+            localStorage.setItem('activeBadgeId',   activeEquipId ?? '');
+            localStorage.setItem('activeBadgeName', data.activeBadgeName ?? '');
+            localStorage.setItem('activeBadgeType', data.activeBadgeType ?? '');
+
+            showToast('✅ ' + data.message);
+            renderItems(); // re-render to update all equip buttons
+
+        } catch(e) {
+            showToast('❌ Network error', true);
+        }
     }
 
     function filterCategory(cat) {
@@ -365,7 +448,6 @@
         pendingItem = null;
     }
 
-    // ── Confirm buy — reads exact error message from backend ──
     async function confirmBuy() {
         if (!pendingItem) return;
         const btn = document.getElementById("confirmBtn");
@@ -380,7 +462,6 @@
             if (res.ok) {
                 closeModal();
                 showToast(`✅ ${pendingItem.name} purchased!`);
-                // Reload fresh from backend — don't update locally
                 await loadBalance();
                 await loadInventory();
                 renderItems();

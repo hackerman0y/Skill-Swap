@@ -54,9 +54,55 @@
         .swap-btn:hover { transform: scale(0.97); opacity: 0.9; }
 
         .user-info-detail { display: flex; align-items: center; gap: 14px; margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); text-align: left; }
-        .detail-avatar { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 1.2rem; flex-shrink: 0; }
+        .detail-avatar { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 1.2rem; flex-shrink: 0; cursor: pointer; transition: all 0.2s ease; }
+        .detail-avatar:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(108,99,255,0.3); }
         .online-status { font-size: 0.8rem; color: var(--text-light); margin-top: 2px; }
-        .user-name-detail { font-weight: 700; font-size: 1rem; color: var(--text); }
+
+        .user-name-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+            flex-wrap: wrap;
+        }
+
+        .user-name-link {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-name-link:hover {
+            color: var(--primary);
+        }
+
+        .badge-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 1rem;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #d8b4fe;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .badge-chip:hover {
+            background: rgba(168, 85, 247, 0.25);
+            border-color: rgba(168, 85, 247, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+        }
+
+        .badge-chip .emoji {
+            font-size: 0.9rem;
+        }
 
         /* ── SWAP MODAL ── */
         .modal-overlay {
@@ -177,6 +223,14 @@
     const currentUserId = localStorage.getItem("userId");
 
     function navigate(url) { sessionStorage.setItem('navigating','true'); location.href = url; }
+    function viewUserProfile(userId) {
+        if (String(userId) === String(currentUserId)) {
+            navigate('profile.html');
+        } else {
+            sessionStorage.setItem('navigating','true');
+            location.href = `user-profile.html?userId=${userId}`;
+        }
+    }
 
     const modeBtn = document.getElementById("modeBtn");
     if (localStorage.getItem("mode") === "dark") { document.body.classList.add("dark"); modeBtn.innerText = "☀️"; }
@@ -220,6 +274,36 @@
         }
     }
 
+    // ── Store items reference (for badge emojis) ──
+    const STORE_ITEMS = {
+        1:  { name: 'Gold Frame', emoji: '🟨' },
+        2:  { name: 'Diamond Frame', emoji: '💎' },
+        3:  { name: 'Fire Frame', emoji: '🔥' },
+        4:  { name: 'Top Teacher', emoji: '👑' },
+        5:  { name: 'Expert Badge', emoji: '⭐' },
+        6:  { name: 'Early Adopter', emoji: '🚀' },
+        7:  { name: '10% Discount', emoji: '🎫' },
+        8:  { name: 'Free Pass', emoji: '🎁' },
+        9:  { name: 'Profile Boost 24h', emoji: '✨' },
+        10: { name: 'Skill Spotlight', emoji: '💫' },
+        11: { name: 'Double XP Weekend', emoji: '⚡' },
+        12: { name: 'Galaxy Frame', emoji: '🌌' }
+    };
+
+    // ── Get first badge from inventory ──
+    function getFirstBadge(inventory) {
+        if (!inventory || inventory.length === 0) return null;
+        // Look for badge by checking both 'type' and 'category' fields
+        const badgeItem = inventory.find(inv => {
+            if (!inv.item) return false;
+            const isBadge = inv.item.type === 'badge' || inv.item.category === 'badge';
+            return isBadge;
+        });
+        if (!badgeItem || !badgeItem.item) return null;
+        const storeItem = STORE_ITEMS[badgeItem.item.id];
+        return storeItem ? { emoji: storeItem.emoji, name: storeItem.name } : null;
+    }
+
     // ── Swap state ──
     let targetSkillId = null;
     let targetOwnerId = null;
@@ -235,9 +319,20 @@
                 const user         = skill.user || {};
                 const isOwn        = String(user.id) === String(currentUserId);
                 const alreadyLiked = isAlreadyLiked(skill.id);
+                const badge        = getFirstBadge(user.userInventory);
 
                 targetSkillId = skill.id;
                 targetOwnerId = user.id;
+
+                // Build badge chip HTML
+                let badgeHtml = '';
+                if (badge) {
+                    badgeHtml = `
+                    <span class="badge-chip" title="Click to view profile" onclick="viewUserProfile(${user.id})">
+                        <span class="emoji">${badge.emoji}</span>
+                        <span>${badge.name}</span>
+                    </span>`;
+                }
 
                 container.innerHTML = `
                     <h2>${escapeHtml(skill.name)}</h2>
@@ -270,9 +365,12 @@
                         </button>` : ''}
                     </div>
                     <div class="user-info-detail">
-                        <div class="detail-avatar">${(user.username?.charAt(0)||'U').toUpperCase()}</div>
-                        <div>
-                            <div class="user-name-detail">${escapeHtml(user.username||'Unknown')}</div>
+                        <div class="detail-avatar" onclick="viewUserProfile(${user.id})" title="View profile">${(user.username?.charAt(0)||'U').toUpperCase()}</div>
+                        <div style="flex: 1;">
+                            <div class="user-name-detail">
+                                <span class="user-name-link" onclick="viewUserProfile(${user.id})" title="Click to view profile">${escapeHtml(user.username||'Unknown')}</span>
+                                ${badgeHtml}
+                            </div>
                             <div class="online-status">${user.online ? '🟢 Online' : '⚫ Offline'}</div>
                         </div>
                     </div>

@@ -74,6 +74,9 @@ public class SecurityConfig {
                                 "/store"
 
                         ).permitAll()
+
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin.html").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

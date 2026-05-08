@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — SkillSwap</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary:       #6c63ff;
+            --primary-light: #8b5cf6;
+            --success:       #10b981;
+            --danger:        #ef4444;
+            --amber:         #f59e0b;
+            --bg:            #080810;
+            --card:          rgba(255,255,255,0.035);
+            --border:        rgba(255,255,255,0.07);
+            --text:          #f1f5f9;
+            --text-light:    #94a3b8;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Ambient blobs ── */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.18;
+        }
+        .blob-1 { width: 600px; height: 600px; background: var(--primary);      top: -200px; left: -150px; animation: drift 14s ease-in-out infinite alternate; }
+        .blob-2 { width: 400px; height: 400px; background: var(--primary-light); bottom: -100px; right: -100px; animation: drift 18s ease-in-out infinite alternate-reverse; }
+        .blob-3 { width: 300px; height: 300px; background: var(--amber);         top: 40%; left: 60%; animation: drift 20s ease-in-out infinite alternate; }
+        @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.08); } }
+
+        /* ── Navbar ── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(8,8,16,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px;
+        }
+        .nav-logo {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800; font-size: 1.3rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse { 0%,100%{filter:drop-shadow(0 0 6px rgba(108,99,255,.4))} 50%{filter:drop-shadow(0 0 14px rgba(108,99,255,.8))} }
+        .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .nav-badge {
+            background: rgba(239,68,68,0.15); color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.3);
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600; letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .nav-user { display: flex; align-items: center; gap: 8px; color: var(--text-light); font-size: 0.9rem; }
+        .nav-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 700; color: white;
+        }
+        .btn-logout {
+            background: rgba(239,68,68,0.1); color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.25);
+            padding: 6px 14px; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-logout:hover { background: rgba(239,68,68,0.2); }
+
+        /* ── Layout ── */
+        main {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        /* ── Page header ── */
+        .page-header { margin-bottom: 2.5rem; animation: fadeUp .5s ease both; }
+        .page-header h1 {
+            font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+            margin-bottom: 0.3rem;
+        }
+        .page-header p { color: var(--text-light); font-size: 0.95rem; }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── Stat cards ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem; margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 1.5rem;
+            display: flex; align-items: center; gap: 1.2rem;
+            animation: fadeUp .5s ease both;
+            transition: transform .25s, border-color .25s;
+        }
+        .stat-card:hover { transform: translateY(-3px); border-color: rgba(108,99,255,0.3); }
+        .stat-card:nth-child(1) { animation-delay: .05s; }
+        .stat-card:nth-child(2) { animation-delay: .10s; }
+        .stat-card:nth-child(3) { animation-delay: .15s; }
+        .stat-card:nth-child(4) { animation-delay: .20s; }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; flex-shrink: 0;
+        }
+        .stat-icon.purple { background: rgba(108,99,255,0.15); }
+        .stat-icon.green  { background: rgba(16,185,129,0.15); }
+        .stat-icon.amber  { background: rgba(245,158,11,0.15); }
+        .stat-icon.red    { background: rgba(239,68,68,0.15); }
+        .stat-info h2 {
+            font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800;
+            line-height: 1;
+        }
+        .stat-info p { color: var(--text-light); font-size: 0.82rem; margin-top: 3px; }
+
+        /* ── Section ── */
+        .section { margin-bottom: 2.5rem; animation: fadeUp .5s ease both; animation-delay: .25s; }
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .section-header h2 {
+            font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700;
+        }
+        .section-header span { color: var(--text-light); font-size: 0.85rem; }
+
+        /* ── Table ── */
+        .table-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px; overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { border-bottom: 1px solid var(--border); }
+        th {
+            padding: 0.85rem 1.2rem; text-align: left;
+            font-size: 0.75rem; font-weight: 600; letter-spacing: .08em;
+            text-transform: uppercase; color: var(--primary);
+        }
+        td {
+            padding: 0.85rem 1.2rem;
+            font-size: 0.9rem; color: var(--text);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background .15s; }
+        tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-admin  { background: rgba(108,99,255,0.15); color: var(--primary); border: 1px solid rgba(108,99,255,0.25); }
+        .badge-user   { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.25); }
+        .badge-online { background: rgba(16,185,129,0.12); color: var(--success); }
+        .badge-offline{ background: rgba(148,163,184,0.1); color: var(--text-light); }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 6px 14px; border-radius: 8px; border: none;
+            font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-red   { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.25); }
+        .btn-red:hover { background: rgba(239,68,68,0.25); }
+        .btn-purple{ background: rgba(108,99,255,0.12); color: var(--primary); border: 1px solid rgba(108,99,255,0.25); }
+        .btn-purple:hover { background: rgba(108,99,255,0.25); }
+        .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed; bottom: 2rem; right: 2rem;
+            background: rgba(16,185,129,0.15); color: var(--success);
+            border: 1px solid rgba(16,185,129,0.3);
+            padding: 0.75rem 1.25rem; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 500;
+            transform: translateY(80px); opacity: 0;
+            transition: all .35s cubic-bezier(.34,1.3,.64,1);
+            z-index: 999;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+        #toast.error { background: rgba(239,68,68,0.15); color: var(--danger); border-color: rgba(239,68,68,0.3); }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #0f0f1e;
+            border: 1px solid var(--border);
+            border-radius: 20px; padding: 2rem;
+            width: 100%; max-width: 420px;
+            animation: fadeUp .3s ease;
+        }
+        .modal h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin-bottom: 1.2rem; }
+        .modal select {
+            width: 100%; padding: 0.7rem 1rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border); border-radius: 10px;
+            color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+            margin-bottom: 1.2rem; outline: none;
+        }
+        .modal-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+
+        /* ── Empty state ── */
+        .empty { padding: 2.5rem; text-align: center; color: var(--text-light); font-size: 0.9rem; }
+
+        /* ── Access denied ── */
+        #access-denied {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 60vh; text-align: center; gap: 1rem;
+        }
+        #access-denied .big-icon { font-size: 4rem; }
+        #access-denied h2 { font-family: 'Syne', sans-serif; font-size: 1.5rem; }
+        #access-denied p  { color: var(--text-light); }
+        #access-denied a  { color: var(--primary); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<!-- Ambient blobs -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- Navbar -->
+<nav>
+    <div class="nav-logo">⚡ SkillSwap</div>
+    <div class="nav-right">
+        <span class="nav-badge">Admin</span>
+        <div class="nav-user">
+            <div class="nav-avatar" id="nav-avatar">A</div>
+            <span id="nav-username">Loading...</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Role modal -->
+<div class="modal-overlay" id="role-modal">
+    <div class="modal">
+        <h3>Change User Role</h3>
+        <select id="role-select">
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+        </select>
+        <div class="modal-actions">
+            <button class="btn btn-red" onclick="closeRoleModal()">Cancel</button>
+            <button class="btn btn-purple" onclick="confirmRoleChange()">Save</button>
+        </div>
+    </div>
+</div>
+
+<main>
+
+    <!-- Access denied (shown if not admin) -->
+    <div id="access-denied">
+        <div class="big-icon">🔒</div>
+        <h2>Access Denied</h2>
+        <p>You don't have permission to view this page.</p>
+        <a href="index.html">← Back to Marketplace</a>
+    </div>
+
+    <!-- Dashboard (shown only to admins) -->
+    <div id="dashboard" style="display:none;">
+
+        <div class="page-header">
+            <h1>⚙️ Admin Dashboard</h1>
+            <p>Manage users, skills, and platform activity.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon purple">👥</div>
+                <div class="stat-info">
+                    <h2 id="stat-users">—</h2>
+                    <p>Total Users</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">🧠</div>
+                <div class="stat-info">
+                    <h2 id="stat-skills">—</h2>
+                    <p>Total Skills</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon amber">🪙</div>
+                <div class="stat-info">
+                    <h2 id="stat-admins">—</h2>
+                    <p>Admins</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red">🟢</div>
+                <div class="stat-info">
+                    <h2 id="stat-online">—</h2>
+                    <p>Online Now</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="section">
+            <div class="section-header">
+                <h2>All Users</h2>
+                <span id="users-count">Loading...</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                    <tr><td colspan="6" class="empty">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Skills Table -->
+        <div class="section" style="animation-delay:.35s;">
+            <div class="section-header">
+                <h2>All Skills</h2>
+                <span id="skills-count">Loading...</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Posted By</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="skills-tbody">
+                    <tr><td colspan="5" class="empty">Loading skills...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /dashboard -->
+</main>
+
+<script>
+    const BASE = 'http://localhost:8080';
+    const token = localStorage.getItem('token');
+    let currentRoleUserId = null;
+    let allUsers = [];
+
+    // ── Boot ──────────────────────────────────────────────
+    async function boot() {
+        if (!token) { showAccessDenied(); return; }
+
+        try {
+            // Check if current user is ADMIN
+            const meRes = await fetch(`${BASE}/api/users/me`, {
+                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include'
+            });
+
+            if (!meRes.ok) { showAccessDenied(); return; }
+
+            const me = await meRes.json();
+
+            if (me.role !== 'ADMIN') { showAccessDenied(); return; }
+
+            // Show dashboard
+            document.getElementById('access-denied').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+
+            // Set nav
+            document.getElementById('nav-username').textContent = me.username || me.email;
+            document.getElementById('nav-avatar').textContent = (me.username || 'A')[0].toUpperCase();
+
+            // Load data
+            loadStats();
+            loadUsers();
+            loadSkills();
+
+        } catch (e) {
+            showAccessDenied();
+        }
+    }
+
+    function showAccessDenied() {
+        document.getElementById('access-denied').style.display = 'flex';
+        document.getElementById('dashboard').style.display = 'none';
+    }
+
+    // ── Stats ─────────────────────────────────────────────
+    async function loadStats() {
+        try {
+            const res = await fetch(`${BASE}/api/admin/stats`, {
+                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include'
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            animateCount('stat-users',  data.totalUsers  || 0);
+            animateCount('stat-skills', data.totalSkills || 0);
+            animateCount('stat-admins', data.totalAdmins || 0);
+            animateCount('stat-online', data.onlineUsers || 0);
+        } catch(e) { console.error('Stats error:', e); }
+    }
+
+    function animateCount(id, target) {
+        const el = document.getElementById(id);
+        let current = 0;
+        const step = Math.max(1, Math.ceil(target / 30));
+        const timer = setInterval(() => {
+            current = Math.min(current + step, target);
+            el.textContent = current;
+            if (current >= target) clearInterval(timer);
+        }, 40);
+    }
+
+    // ── Users ─────────────────────────────────────────────
+    async function loadUsers() {
+        try {
+            const res = await fetch(`${BASE}/api/admin/users`, {
+                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include'
+            });
+            if (!res.ok) return;
+            allUsers = await res.json();
+            renderUsers(allUsers);
+            document.getElementById('users-count').textContent = allUsers.length + ' users';
+        } catch(e) { console.error('Users error:', e); }
+    }
+
+    function renderUsers(users) {
+        const tbody = document.getElementById('users-tbody');
+        if (!users.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">No users found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td style="color:var(--text-light)">#${u.id}</td>
+                <td><strong>${u.username || '—'}</strong></td>
+                <td style="color:var(--text-light)">${u.email || '—'}</td>
+                <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin' : 'badge-user'}">${u.role || 'USER'}</span></td>
+                <td><span class="badge ${u.online ? 'badge-online' : 'badge-offline'}">${u.online ? '🟢 Online' : '⚫ Offline'}</span></td>
+                <td style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-purple btn-sm" onclick="openRoleModal(${u.id}, '${u.role || 'USER'}')">Role</button>
+                    <button class="btn btn-red btn-sm" onclick="deleteUser(${u.id}, '${u.username}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function deleteUser(id, username) {
+        if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`${BASE}/api/admin/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include'
+            });
+            if (res.ok) {
+                showToast('✅ User deleted');
+                loadUsers();
+                loadStats();
+            } else {
+                showToast('❌ Failed to delete user', true);
+            }
+        } catch(e) { showToast('❌ Network error', true); }
+    }
+
+    // ── Role Modal ────────────────────────────────────────
+    function openRoleModal(userId, currentRole) {
+        currentRoleUserId = userId;
+        document.getElementById('role-select').value = currentRole;
+        document.getElementById('role-modal').classList.add('open');
+    }
+
+    function closeRoleModal() {
+        document.getElementById('role-modal').classList.remove('open');
+        currentRoleUserId = null;
+    }
+
+    async function confirmRoleChange() {
+        const newRole = document.getElementById('role-select').value;
+        try {
+            const res = await fetch(`${BASE}/api/admin/users/${currentRoleUserId}/role`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ role: newRole })
+            });
+            if (res.ok) {
+                showToast('✅ Role updated to ' + newRole);
+                closeRoleModal();
+                loadUsers();
+            } else {
+                showToast('❌ Failed to update role', true);
+            }
+        } catch(e) { showToast('❌ Network error', true); }
+    }
+
+    // ── Skills ────────────────────────────────────────────
+    async function loadSkills() {
+        try {
+            const res = await fetch(`${BASE}/api/skills`, {
+                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include'
+            });
+            if (!res.ok) return;
+            const skills = await res.json();
+            renderSkills(skills);
+            document.getElementById('skills-count').textContent = skills.length + ' skills';
+        } catch(e) { console.error('Skills error:', e); }
+    }
+
+    function renderSkills(skills) {
+        const tbody = document.getElementById('skills-tbody');
+        if (!skills.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">No skills found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = skills.map(s => `
+            <tr>
+                <td style="color:var(--text-light)">#${s.id}</td>
+                <td><strong>${s.title || s.name || '—'}</strong></td>
+                <td style="color:var(--text-light)">${s.category || '—'}</td>
+                <td style="color:var(--text-light)">${s.username || s.userId || '—'}</td>
+                <td>
+                    <button class="btn btn-red btn-sm" onclick="deleteSkill(${s.id}, '${(s.title||s.name||'').replace(/'/g,"\\'")}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function deleteSkill(id, title) {
+        if (!confirm(`Delete skill "${title}"?`)) return;
+        try {
+            const res = await fetch(`${BASE}/api/admin/skills/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token },
+                credentials: 'include'
+            });
+            if (res.ok) {
+                showToast('✅ Skill deleted');
+                loadSkills();
+                loadStats();
+            } else {
+                showToast('❌ Failed to delete skill', true);
+            }
+        } catch(e) { showToast('❌ Network error', true); }
+    }
+
+    // ── Logout ────────────────────────────────────────────
+    async function logout() {
+        await fetch(`${BASE}/api/users/logout`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            credentials: 'include'
+        });
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    }
+
+    // ── Toast ─────────────────────────────────────────────
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'show' + (isError ? ' error' : '');
+        setTimeout(() => { t.className = ''; }, 3000);
+    }
+
+    // ── Close modal on overlay click ──────────────────────
+    document.getElementById('role-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeRoleModal();
+    });
+
+    boot();
+</script>
+</body>
+</html>
