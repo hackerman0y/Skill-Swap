@@ -21,7 +21,6 @@ public class SessionController {
     private final JwtUtil jwtUtil;
     private final UserService userService;
 
-    // ── FIX 7: Extract userId from JWT instead of trusting X-User-Id header ──
     private Long extractUserId(String authHeader) {
         String token = authHeader.substring(7);
         String email = jwtUtil.extractEmail(token);
@@ -29,6 +28,7 @@ public class SessionController {
         return user.getId();
     }
 
+    // ── Schedule a session ──
     @PostMapping
     public ResponseEntity<SessionResponseDTO> schedule(
             @RequestBody SessionRequestDTO dto,
@@ -38,6 +38,7 @@ public class SessionController {
                 .body(sessionService.scheduleSession(dto, userId));
     }
 
+    // ── Get my sessions ──
     @GetMapping
     public ResponseEntity<List<SessionResponseDTO>> getMySessions(
             @RequestHeader("Authorization") String authHeader) {
@@ -45,11 +46,30 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.getMySessions(userId));
     }
 
+    // ── Get session by id ──
     @GetMapping("/{id}")
     public ResponseEntity<SessionResponseDTO> getById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
         Long userId = extractUserId(authHeader);
         return ResponseEntity.ok(sessionService.getSessionById(id, userId));
+    }
+
+    // ── Start session: UPCOMING → IN_PROGRESS ──
+    @PutMapping("/{id}/start")
+    public ResponseEntity<SessionResponseDTO> startSession(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        Long userId = extractUserId(authHeader);
+        return ResponseEntity.ok(sessionService.startSession(id, userId));
+    }
+
+    // ── End session: IN_PROGRESS → COMPLETED + 50 coins ──
+    @PutMapping("/{id}/end")
+    public ResponseEntity<SessionResponseDTO> endSession(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        Long userId = extractUserId(authHeader);
+        return ResponseEntity.ok(sessionService.endSession(id, userId));
     }
 }

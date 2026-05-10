@@ -96,102 +96,113 @@
             color: var(--text-light);
         }
 
-
-
-        .bell-wrapper { position: relative; display: inline-block; }
-
-        .bell-btn {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-            padding: 6px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            position: relative;
+        /* ── Minimal navbar for this page ── */
+        .notif-navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 62px;
+            border-bottom: 1px solid var(--border);
+            background: var(--card);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .bell-badge {
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: var(--danger);
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 0.65rem;
-            font-weight: bold;
-            display: flex !important;
+        .notif-navbar-logo {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            cursor: pointer;
+            letter-spacing: -0.4px;
+        }
+        .notif-navbar-logo span { color: var(--primary); }
+
+        .notif-navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Bell icon button — same style as index.html */
+        .nav-icon-btn {
+            position: relative;
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.15s;
+            overflow: visible;
         }
+        .nav-icon-btn svg { width: 18px; height: 18px; }
+        .nav-icon-btn:hover { background: rgba(108,99,255,0.08); color: var(--primary); }
 
-        .bell-dropdown {
-            display: none;
+        /* External badge — sits OUTSIDE the icon */
+        .nav-badge {
             position: absolute;
-            right: 0;
-            top: calc(100% + 8px);
-            width: 300px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            z-index: 999;
-            overflow: hidden;
-        }
-        .bell-dropdown.open { display: block; }
-
-        .bell-dropdown-header {
-            display: flex;
-            justify-content: space-between;
+            top: -5px; right: -5px;
+            min-width: 16px; height: 16px;
+            background: #ef4444;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            line-height: 1;
+            display: none;
             align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border);
+            justify-content: center;
+            border: 2px solid var(--bg, #fff);
+            padding: 0 3px;
+            pointer-events: none;
+            z-index: 10;
         }
+        .nav-badge.visible { display: flex; }
 
-        .bell-notif-item {
+        .mode-toggle {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            transition: all 0.15s;
+        }
+        .mode-toggle:hover { border-color: var(--primary); color: var(--primary); }
+
+        .btn-back {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--text-light);
             font-size: 0.8rem;
             cursor: pointer;
-            transition: background 0.1s;
+            font-weight: 600;
+            transition: all 0.15s;
         }
-        .bell-notif-item:last-child { border-bottom: none; }
-        .bell-notif-item:hover { background: var(--bg); }
-        .bell-notif-item.unread { font-weight: 600; }
-        .bell-notif-msg { flex: 1; color: var(--text); line-height: 1.4; }
-        .bell-notif-time { color: var(--text-light); font-size: 0.7rem; white-space: nowrap; }
+        .btn-back:hover { border-color: var(--primary); color: var(--primary); }
     </style>
 </head>
 <body>
 
-<div class="navbar">
-    <h2 onclick="navigate('index.html')">SkillSwap</h2>
-    <div class="nav-right">
-
-
-        <div class="bell-wrapper" id="bellWrapper">
-            <button class="bell-btn" onclick="toggleBellDropdown()">
-                🔔
-                <span class="bell-badge" id="bellBadge"></span>
-            </button>
-            <div class="bell-dropdown" id="bellDropdown">
-                <div class="bell-dropdown-header">
-                    <span style="font-weight:600; font-size:0.88rem;">Notifications</span>
-                    <a href="notifications.html" style="font-size:0.75rem; color:var(--primary); text-decoration:none;">See all</a>
-                </div>
-                <div id="bellNotifList">
-                    <div style="padding:20px; text-align:center; color:var(--text-light); font-size:0.8rem;">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-
-        <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
+<!-- ── Navbar: just logo + bell (external badge) + mode + back ── -->
+<div class="notif-navbar">
+    <div class="notif-navbar-logo" onclick="navigate('index.html')">
+        Skill<span>Swap</span>
+    </div>
+    <div class="notif-navbar-right">
+        <!-- NO bell button here at all -->
+        <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">🌙</button>
         <button class="btn-back" onclick="navigate('index.html')">← Back</button>
     </div>
 </div>
@@ -250,21 +261,33 @@
         return Math.floor(diff / 86400) + 'd ago';
     }
 
-    // ── NOTIFICATION TYPE → ICON ──
     function notifIcon(type) {
         const icons = {
-            'message':      '💬',
-            'swap_request': '🔄',
-            'swap_accepted':'✅',
-            'swap_rejected':'❌',
-            'session':      '📅',
-            'like':         '❤️',
-            'system':       '📢',
+            'message':       '💬',
+            'swap_request':  '🔄',
+            'swap_accepted': '✅',
+            'swap_rejected': '❌',
+            'session':       '📅',
+            'like':          '❤️',
+            'system':        '📢',
         };
         return icons[type] || '🔔';
     }
 
-    // ── LOAD NOTIFICATIONS (full page) ──
+    function notifTitle(type) {
+        const titles = {
+            'message':       'New Message',
+            'swap_request':  'New Swap Request',
+            'swap_accepted': 'Swap Accepted',
+            'swap_rejected': 'Swap Rejected',
+            'session':       'Session Update',
+            'like':          'Someone liked your skill',
+        };
+        return titles[type] || 'Notification';
+    }
+
+
+    // ── Load full notifications list ──
     async function loadNotifications() {
         const list = document.getElementById("notifPageList");
         try {
@@ -273,13 +296,14 @@
             if (res.status === 401 || res.status === 403) { navigate('login.html'); return; }
 
             if (!res.ok) {
-                // Backend endpoint may not exist yet — show placeholder
                 list.innerHTML = renderPlaceholders();
                 return;
             }
 
             const notifications = await res.json();
-            updateBellBadge(notifications);
+
+
+
 
             if (!notifications.length) {
                 list.innerHTML = `
@@ -310,28 +334,16 @@
         }
     }
 
-    function notifTitle(type) {
-        const titles = {
-            'message': 'New Message',
-            'swap_request': 'Swap Request',
-            'swap_accepted': 'Swap Accepted',
-            'swap_rejected': 'Swap Rejected',
-            'session': 'Session Update',
-            'like': 'Someone liked your skill',
-        };
-        return titles[type] || 'Notification';
-    }
-
-    // ── PLACEHOLDER CARDS (if API not ready yet) ──
+    // ── Placeholder cards if API not ready ──
     function renderPlaceholders() {
         const samples = [
-            { icon: '💬', title: 'New Message', text: 'WebSocket messages will appear here', unread: true },
-            { icon: '🔄', title: 'Swap Request', text: 'Swap request notifications from Yousef\'s module', unread: true },
-            { icon: '✅', title: 'Swap Accepted', text: 'Your swap request was accepted', unread: false },
+            { icon: '💬', title: 'New Message',   text: 'WebSocket messages will appear here',              unread: true  },
+            { icon: '🔄', title: 'Swap Request',  text: "Swap request notifications from Yousef's module", unread: true  },
+            { icon: '✅', title: 'Swap Accepted', text: 'Your swap request was accepted',                   unread: false },
         ];
         return `
-            <div style="background:rgba(108,99,255,0.07); border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:0.8rem; color:var(--text-light);">
-                ℹ️ Showing placeholder data — connect <code>/api/notifications</code> backend endpoint to see real notifications.
+            <div style="background:rgba(108,99,255,0.07);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:0.8rem;color:var(--text-light);">
+                ℹ️ Showing placeholder data — connect <code>/api/notifications</code> to see real notifications.
             </div>
             <div class="notif-list">
                 ${samples.map(s => `
@@ -348,74 +360,24 @@
             </div>`;
     }
 
-    // ── BELL DROPDOWN ──
-    function toggleBellDropdown() {
-        const dropdown = document.getElementById("bellDropdown");
-        dropdown.classList.toggle("open");
-        if (dropdown.classList.contains("open")) loadBellNotifs();
-    }
-
-    async function loadBellNotifs() {
-        const bellList = document.getElementById("bellNotifList");
-        try {
-            const res = await fetch(`${API}/api/notifications`, { headers: authHeaders() });
-            if (!res.ok) {
-                bellList.innerHTML = `<div style="padding:16px;text-align:center;font-size:0.8rem;color:var(--text-light);">No notifications</div>`;
-                return;
-            }
-            const notifications = await res.json();
-            updateBellBadge(notifications);
-
-            if (!notifications.length) {
-                bellList.innerHTML = `<div style="padding:16px;text-align:center;font-size:0.8rem;color:var(--text-light);">All caught up! 🎉</div>`;
-                return;
-            }
-
-            const top5 = notifications.slice(0, 5);
-            bellList.innerHTML = top5.map(n => `
-                <div class="bell-notif-item ${n.read ? '' : 'unread'}"
-                     onclick="handleNotifClick('${n.id}', '${n.type}', '${n.relatedId || ''}')">
-                    <span>${notifIcon(n.type)}</span>
-                    <span class="bell-notif-msg">${escapeHtml(n.message || notifTitle(n.type))}</span>
-                    <span class="bell-notif-time">${timeAgo(n.createdAt)}</span>
-                </div>
-            `).join('');
-
-        } catch(e) {
-            bellList.innerHTML = `<div style="padding:16px;text-align:center;font-size:0.8rem;color:var(--text-light);">Could not load</div>`;
-        }
-    }
-
-    function updateBellBadge(notifications) {
-        const badge = document.getElementById("bellBadge");
-        if (!badge) return;
-        const unread = notifications.filter(n => !n.read).length;
-        if (unread > 0) {
-            badge.textContent = unread > 99 ? '99+' : unread;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-
-    // ── HANDLE CLICK ON A NOTIFICATION ──
+    // ── Handle click on a notification card ──
     async function handleNotifClick(notifId, type, relatedId) {
-        // Mark as read
         try {
             await fetch(`${API}/api/notifications/${notifId}/read`, {
                 method: 'PUT',
                 headers: authHeaders()
             });
-        } catch(e) { /* ignore if endpoint doesn't exist */ }
-
+        } catch(e) {}
 
         if (type === 'message' && relatedId) {
             navigate(`chat.html?userId=${relatedId}`);
         } else if ((type === 'swap_request' || type === 'swap_accepted') && relatedId) {
             navigate(`index.html`);
         }
-    }
 
+        // Refresh list + badge after marking read
+        loadNotifications();
+    }
 
     async function markAllRead() {
         try {
@@ -423,21 +385,9 @@
                 method: 'PUT',
                 headers: authHeaders()
             });
-            loadNotifications();
-        } catch(e) {
-
-            loadNotifications();
-        }
+        } catch(e) {}
+        loadNotifications();
     }
-
-
-    document.addEventListener('click', function(e) {
-        const wrapper = document.getElementById('bellWrapper');
-        if (wrapper && !wrapper.contains(e.target)) {
-            document.getElementById('bellDropdown').classList.remove('open');
-        }
-    });
-
 
     window.addEventListener('beforeunload', () => {
         const navigating = sessionStorage.getItem('navigating');
@@ -446,7 +396,6 @@
         }
         sessionStorage.removeItem('navigating');
     });
-
 
     loadNotifications();
 </script>

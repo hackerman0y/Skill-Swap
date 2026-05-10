@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Profile</title>
+    <title>User Profile</title>
     <link rel="stylesheet" href="style.css">
     <style>
         /* ── Badge chip ──────────────────────────────────────────────── */
@@ -42,25 +42,6 @@
             text-transform: uppercase; margin-top: 2px; letter-spacing: 0.4px;
         }
 
-        /* ── Equip button inside inventory card ─────────────────────── */
-        .equip-btn {
-            margin-top: 8px; padding: 4px 12px; border-radius: 20px;
-            font-size: 0.72rem; font-weight: 700; cursor: pointer;
-            border: 1.5px solid rgba(108,99,255,0.4);
-            background: transparent; color: #8b5cf6;
-            font-family: inherit; transition: all 0.18s; display: inline-block;
-        }
-        .equip-btn:hover:not(.is-equipped) {
-            background: rgba(108,99,255,0.12); border-color: #6c63ff; color: #6c63ff;
-        }
-        .equip-btn.is-equipped {
-            border-color: rgba(16,185,129,0.5); color: #10b981;
-            background: rgba(16,185,129,0.1);
-        }
-        .equip-btn.is-equipped:hover {
-            background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.4); color: #ef4444;
-        }
-
         /* ── Toast ───────────────────────────────────────────────────── */
         .toast {
             position: fixed; bottom: 28px; left: 50%;
@@ -73,27 +54,35 @@
         }
         .toast.show  { transform: translateX(-50%) translateY(0); }
         .toast.error { background: #ef4444; box-shadow: 0 8px 24px rgba(239,68,68,0.35); }
+
+        .btn-back {
+            padding: 8px 16px; border-radius: 20px; border: none;
+            cursor: pointer; font-weight: 600; color: white;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            transition: 0.2s; font-size: 0.9rem; margin-bottom: 20px;
+        }
+        .btn-back:hover { opacity: 0.9; transform: translateX(-2px); }
     </style>
 </head>
 <body>
 
 <div class="navbar">
-    <h2 onclick="navigate('index.html')">My Profile</h2>
+    <h2 id="pageTitle">User Profile</h2>
     <div class="nav-right">
         <button class="mode-btn" id="modeBtn" onclick="toggleMode()">🌙</button>
-        <button class="btn-back" onclick="navigate('index.html')">← Back</button>
+        <button class="btn-back" onclick="goBack()">← Back</button>
     </div>
 </div>
 
 <div class="profile-container">
+    <button class="btn-back" onclick="goBack()">← Back to Details</button>
+
     <div class="avatar">👤</div>
     <!-- username + equipped badge rendered here -->
     <h2 id="username">Loading...</h2>
     <p id="email" class="email-text"></p>
     <p id="status" class="status-text"></p>
     <div id="skillsList" class="skills-list"></div>
-    <br>
-    <button class="btn-logout" onclick="logout()">🚪 Logout</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -101,29 +90,37 @@
 <script>
     const API    = "http://localhost:8080";
     const token  = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    if (!token) location.href = "login.html";
+    const currentUserId = localStorage.getItem("userId");
 
-    // Active badge state — synced with localStorage
-    let activeEquipId   = parseInt(localStorage.getItem('activeBadgeId'))   || null;
-    let activeEquipName = localStorage.getItem('activeBadgeName') || '';
-    let activeEquipType = localStorage.getItem('activeBadgeType') || '';
+    // Get userId from URL query param
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("userId");
+
+    if (!userId) {
+        document.querySelector('.profile-container').innerHTML = "<h3>Invalid user ID</h3>";
+    }
+
+    // Active badge state for this user
+    let userBadgeId   = null;
+    let userBadgeName = '';
 
     // Badge emoji lookup
     const BADGE_EMOJI = {
-        'Top Teacher':       '🏆',
+        'Top Teacher':       '👑',
         'Expert Badge':      '⭐',
-        'Early Adopter':     '🦋',
-        'Gold Frame':        '🟡',
+        'Early Adopter':     '🚀',
+        'Gold Frame':        '🟨',
         'Diamond Frame':     '💎',
         'Fire Frame':        '🔥',
         'Galaxy Frame':      '🌌',
-        'Profile Boost 24h': '🚀',
-        'Skill Spotlight':   '✨',
+        '10% Discount':      '🎫',
+        'Free Pass':         '🎁',
+        'Profile Boost 24h': '✨',
+        'Skill Spotlight':   '💫',
         'Double XP Weekend': '⚡',
     };
 
-    function navigate(url) { sessionStorage.setItem('navigating','true'); location.href = url; }
+    function goBack() { window.history.back(); }
     function authHeaders() { return { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }; }
 
     const modeBtn = document.getElementById("modeBtn");
@@ -143,153 +140,12 @@
     // ── Render the badge chip next to the username ────────────────────────────
     function renderUsernameBadge() {
         const nameEl = document.getElementById('username');
-        const badgeHTML = activeEquipName
-            ? ` <span class="equipped-badge">${BADGE_EMOJI[activeEquipName] || '🏷️'} ${escapeHtml(activeEquipName)}</span>`
+        const badgeHTML = userBadgeName
+            ? ` <span class="equipped-badge">${BADGE_EMOJI[userBadgeName] || '🏷️'} ${escapeHtml(userBadgeName)}</span>`
             : '';
-        // Keep the text part, append badge
         const name = nameEl.dataset.name || nameEl.textContent.split('<')[0].trim();
         nameEl.dataset.name = name;
         nameEl.innerHTML = escapeHtml(name) + badgeHTML;
-    }
-
-    // ── Equip / unequip ───────────────────────────────────────────────────────
-    async function equipItem(itemId, itemName) {
-        try {
-            const res = await fetch(`${API}/api/users/equip/${itemId}`, {
-                method: 'PUT',
-                headers: authHeaders()
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) { showToast('❌ ' + (data.message || data), true); return; }
-
-            // Update state + localStorage
-            activeEquipId   = data.activeBadgeId   ?? null;
-            activeEquipName = data.activeBadgeName  ?? '';
-            activeEquipType = data.activeBadgeType  ?? '';
-            localStorage.setItem('activeBadgeId',   activeEquipId   ?? '');
-            localStorage.setItem('activeBadgeName', activeEquipName);
-            localStorage.setItem('activeBadgeType', activeEquipType);
-
-            showToast('✅ ' + data.message);
-
-            // Refresh badge next to name + all equip buttons
-            renderUsernameBadge();
-            refreshEquipButtons();
-
-        } catch(e) { showToast('❌ Network error', true); }
-    }
-
-    // Update all equip buttons to reflect current equipped item
-    function refreshEquipButtons() {
-        document.querySelectorAll('.equip-btn').forEach(btn => {
-            const id = parseInt(btn.dataset.itemId);
-            const equipped = id === activeEquipId;
-            btn.textContent = equipped ? '✅ Equipped' : 'Equip';
-            btn.classList.toggle('is-equipped', equipped);
-        });
-        document.querySelectorAll('.inventory-item').forEach(card => {
-            const id = parseInt(card.dataset.itemId);
-            card.classList.toggle('is-equipped', id === activeEquipId);
-        });
-    }
-
-    window.addEventListener('beforeunload', () => {
-        const navigating = sessionStorage.getItem('navigating');
-        if (userId && !navigating) navigator.sendBeacon(`${API}/presence/offline/${userId}`);
-        sessionStorage.removeItem('navigating');
-    });
-
-    // ── Load profile ──────────────────────────────────────────────────────────
-    async function loadProfile() {
-        try {
-            await fetch(`${API}/presence/online`, { method: 'POST', headers: authHeaders() });
-
-            const userRes = await fetch(`${API}/api/users/me`, { headers: authHeaders() });
-            if (!userRes.ok) { navigate('login.html'); return; }
-
-            const user = await userRes.json();
-
-            // Sync equipped badge from server (source of truth)
-            if (user.activeBadgeId) {
-                activeEquipId   = user.activeBadgeId;
-                activeEquipName = user.activeBadgeName ?? '';
-                activeEquipType = user.activeBadgeType ?? '';
-                localStorage.setItem('activeBadgeId',   activeEquipId);
-                localStorage.setItem('activeBadgeName', activeEquipName);
-                localStorage.setItem('activeBadgeType', activeEquipType);
-            }
-
-            // Render username + badge
-            const nameEl = document.getElementById('username');
-            nameEl.dataset.name = user.username || 'No name';
-            renderUsernameBadge();
-
-            document.getElementById("email").innerText  = user.email || '';
-            document.getElementById("status").innerHTML = user.online ? "🟢 Online" : "⚫ Offline";
-
-            const skillsRes = await fetch(`${API}/api/skills/user/${user.id}`, { headers: authHeaders() });
-            if (!skillsRes.ok) throw new Error();
-
-            const skills = await skillsRes.json();
-            const list   = document.getElementById("skillsList");
-
-            list.innerHTML = skills.length
-                ? "<h3>My Skills</h3>" + skills.map(s => `
-                    <div class="skill-item">
-                        <b>${escapeHtml(s.name)}</b> — ${escapeHtml(s.category || "")}
-                        <span class="skill-type-badge ${s.type === 'teach' ? 'badge-teach' : 'badge-learn'}">${s.type}</span>
-                        <p>${escapeHtml(s.description || "")}</p>
-                        <small>🔥 ${s.popularity || 0}</small>
-                    </div>`).join('')
-                : "<p class='no-skills'>No skills yet</p>";
-
-        } catch(e) {
-            document.getElementById("skillsList").innerHTML = "<p>Could not load skills</p>";
-        }
-    }
-
-    // ── Load inventory with equip buttons ────────────────────────────────────
-    async function loadInventory() {
-        try {
-            const res = await fetch(`${API}/api/store/inventory`, { headers: authHeaders() });
-            if (!res.ok) return;
-            const items = await res.json();
-            if (!items.length) return;
-
-            const section = document.createElement('div');
-            section.className = 'inventory-section';
-            section.innerHTML = `
-                <h3>🎒 My Items</h3>
-                <div class="inventory-grid">
-                    ${items.map(i => {
-                const item       = i.item ?? i;
-                const itemId     = item.id;
-                const canEquip   = item.category === 'badge' || item.category === 'frame'
-                    || item.type     === 'badge' || item.type     === 'frame';
-                const isEquipped = itemId === activeEquipId;
-                const emoji      = BADGE_EMOJI[item.name] || getItemIcon(item.category ?? item.type);
-                return `
-                        <div class="inventory-item ${isEquipped ? 'is-equipped' : ''}" data-item-id="${itemId}">
-                            <div class="item-icon">${emoji}</div>
-                            <div class="item-name">${escapeHtml(item.name)}</div>
-                            <div class="item-type">${escapeHtml(item.category ?? item.type ?? '')}</div>
-                            ${canEquip ? `
-                            <button class="equip-btn ${isEquipped ? 'is-equipped' : ''}"
-                                    data-item-id="${itemId}"
-                                    onclick="equipItem(${itemId}, '${item.name.replace(/'/g,"\\'")}')">
-                                ${isEquipped ? '✅ Equipped' : 'Equip'}
-                            </button>` : ''}
-                        </div>`;
-            }).join('')}
-                </div>`;
-            document.querySelector('.profile-container').appendChild(section);
-        } catch(e) { console.error('Inventory load failed', e); }
-    }
-
-    function getItemIcon(type) {
-        return { frame:'🖼️', badge:'🏅', coupon:'🎟️', boost:'⚡' }[type] || '🎁';
     }
 
     function showToast(msg, isError = false) {
@@ -300,15 +156,109 @@
         setTimeout(() => t.classList.remove("show"), 3200);
     }
 
-    async function logout() {
-        if (userId) navigator.sendBeacon(`${API}/presence/offline/${userId}`);
-        try { await fetch(`${API}/api/users/logout`, { method: "POST", headers: authHeaders() }); } catch(_) {}
-        localStorage.clear();
-        location.href = "login.html";
+    function getItemIcon(type) {
+        return { frame:'🖼️', badge:'🏅', coupon:'🎟️', boost:'⚡' }[type] || '🎁';
+    }
+
+    window.addEventListener('beforeunload', () => {
+        const navigating = sessionStorage.getItem('navigating');
+        if (currentUserId && !navigating) navigator.sendBeacon(`${API}/presence/offline/${currentUserId}`);
+        sessionStorage.removeItem('navigating');
+    });
+
+    // ── Load user profile ──────────────────────────────────────────────────────
+    async function loadProfile() {
+        try {
+            const userRes = await fetch(`${API}/api/users/${userId}`, {
+                headers: authHeaders()
+            });
+
+            if (!userRes.ok) {
+                document.querySelector('.profile-container').innerHTML = "<h3>❌ User not found</h3>";
+                return;
+            }
+
+            const user = await userRes.json();
+
+            // Sync equipped badge from server
+            if (user.activeBadgeId) {
+                userBadgeId   = user.activeBadgeId;
+                userBadgeName = user.activeBadgeName ?? '';
+            }
+
+            // Update page title
+            document.getElementById("pageTitle").textContent = user.username ? `${user.username}'s Profile` : "User Profile";
+
+            // Render username + badge
+            const nameEl = document.getElementById('username');
+            nameEl.dataset.name = user.username || 'Unknown User';
+            renderUsernameBadge();
+
+            document.getElementById("email").innerText  = user.email || '';
+            document.getElementById("status").innerHTML = user.online ? "🟢 Online" : "⚫ Offline";
+
+            // Load skills
+            const skillsRes = await fetch(`${API}/api/skills/user/${user.id}`, {
+                headers: authHeaders()
+            });
+
+            if (!skillsRes.ok) throw new Error();
+
+            const skills = await skillsRes.json();
+            const list   = document.getElementById("skillsList");
+
+            list.innerHTML = skills.length
+                ? "<h3>Skills</h3>" + skills.map(s => `
+                    <div class="skill-item">
+                        <b>${escapeHtml(s.name)}</b> — ${escapeHtml(s.category || "")}
+                        <span class="skill-type-badge ${s.type === 'teach' ? 'badge-teach' : 'badge-learn'}">${s.type}</span>
+                        <p>${escapeHtml(s.description || "")}</p>
+                        <small>🔥 ${s.popularity || 0}</small>
+                    </div>`).join('')
+                : "<p class='no-skills'>No skills yet</p>";
+
+            // Load inventory
+            loadInventory(user.id);
+
+        } catch(e) {
+            console.error('Error loading profile:', e);
+            document.querySelector('.profile-container').innerHTML = "<p>Could not load profile</p>";
+        }
+    }
+
+    // ── Load inventory ────────────────────────────────────────────────────────
+    async function loadInventory(userId) {
+        try {
+            const res = await fetch(`${API}/api/store/inventory?userId=${userId}`, {
+                headers: authHeaders()
+            });
+            if (!res.ok) return;
+            const items = await res.json();
+            if (!items.length) return;
+
+            const section = document.createElement('div');
+            section.className = 'inventory-section';
+            section.innerHTML = `
+                <h3>🎒 Items</h3>
+                <div class="inventory-grid">
+                    ${items.map(i => {
+                const item       = i.item ?? i;
+                const itemId     = item.id;
+                const isEquipped = itemId === userBadgeId;
+                const emoji      = BADGE_EMOJI[item.name] || getItemIcon(item.category ?? item.type);
+                return `
+                        <div class="inventory-item ${isEquipped ? 'is-equipped' : ''}" data-item-id="${itemId}">
+                            <div class="item-icon">${emoji}</div>
+                            <div class="item-name">${escapeHtml(item.name)}</div>
+                            <div class="item-type">${escapeHtml(item.category ?? item.type ?? '')}</div>
+                        </div>`;
+            }).join('')}
+                </div>`;
+            document.querySelector('.profile-container').appendChild(section);
+        } catch(e) { console.error('Inventory load failed', e); }
     }
 
     loadProfile();
-    loadInventory();
 </script>
 </body>
 </html>

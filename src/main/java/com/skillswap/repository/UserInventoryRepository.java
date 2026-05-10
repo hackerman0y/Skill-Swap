@@ -11,4 +11,5 @@ public interface UserInventoryRepository extends JpaRepository<UserInventory, Lo
     List<UserInventory> findByUserId(Long userId);
 
     boolean existsByUserIdAndItemId(Long userId, Long itemId);
+
 }

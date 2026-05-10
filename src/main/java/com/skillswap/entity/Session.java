@@ -27,6 +27,9 @@ public class Session {
     @Column(nullable = false)
     private SessionStatus status = SessionStatus.UPCOMING;
 
+    private LocalDateTime startedAt;    // set when publisher clicks Start
+    private LocalDateTime completedAt;  // set when publisher clicks End
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }
