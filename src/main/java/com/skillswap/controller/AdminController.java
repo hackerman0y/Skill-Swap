@@ -1,22 +1,23 @@
 package com.skillswap.controller;
 
+import com.skillswap.repository.SwapRequestRepository;
 import com.skillswap.repository.UserRepository;
 import com.skillswap.repository.SkillRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
+@RequiredArgsConstructor
 public class AdminController {
 
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
+    private final SwapRequestRepository swapRequestRepository;
 
-    public AdminController(UserRepository userRepository, SkillRepository skillRepository) {
-        this.userRepository = userRepository;
-        this.skillRepository = skillRepository;
-    }
+    // ← NO constructor here, Lombok generates it
 
     @GetMapping("/stats")
     public ResponseEntity<?> getStats() {
@@ -46,8 +47,13 @@ public class AdminController {
 
     @DeleteMapping("/skills/{id}")
     public ResponseEntity<?> deleteSkill(@PathVariable Long id) {
+        if (!skillRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        swapRequestRepository.deleteByOfferedSkillId(id);
+        swapRequestRepository.deleteByWantedSkillId(id);
         skillRepository.deleteById(id);
-        return ResponseEntity.ok("Deleted");
+        return ResponseEntity.ok("Skill deleted successfully");
     }
 
     @PatchMapping("/users/{id}/role")
